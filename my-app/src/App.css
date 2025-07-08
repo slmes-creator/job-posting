@@ -56,7 +56,8 @@ body {
   background-color: var(--secondary-bg);
   color: var(--primary-text);
   font-size: 13.5px;
-  font-weight: 700; /* moderately bold */
+  font-weight: 200; /* moderately bold */
+  border: 2px solid var(--secondary-bg);
 }
 
 .AuthInput::placeholder {
