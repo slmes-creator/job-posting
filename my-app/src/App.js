@@ -6,8 +6,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from './firebase';
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Register from './pages/register';
-import ForgotPassword from './pages/forgotPassword';
+import { Outlet, Link } from "react-router-dom";
 
 function App() {
   const [showPassword, setShowPassword] = useState(false);
@@ -46,9 +45,10 @@ function App() {
             <button className='AuthButton' onClick={handleLogin}>Login</button>
           </div>
           <div className='AuthFooterRow'>
-            <p className='AuthFooter'><a href="#">Forgot Password?</a></p>
-            <p className='AuthFooter'><a href="#">Register</a></p>
+            <p className='AuthFooter'><Link to="/forgot-password">Forgot Password?</Link></p>
+            <p className='AuthFooter'><Link to="/register">Register</Link></p>
           </div>
+          <Outlet />
         </div>
       </div>
   )
