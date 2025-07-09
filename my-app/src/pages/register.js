@@ -5,6 +5,8 @@ import '../App.css';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 
+import { Outlet, Link } from "react-router-dom";
+
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -23,7 +25,7 @@ const Register = () => {
     <div className="AppWrapper">
       <div className="AuthBox">
         <div className="AuthContent">
-          <h1 className="AuthHeader">Register</h1>
+          <h1 className="AuthHeader">Sign up</h1>
           <input className='AuthInput' type="text" placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
           <div className='PasswordInputWrapper'>
             <input
@@ -39,11 +41,12 @@ const Register = () => {
               {showPassword ? <FaEye /> : <FaEyeSlash />}
             </button>
           </div>
-          <button className='AuthButton' onClick={handleRegister}>Register</button>
+          <button className='AuthButton' style={{ width: "30%" }} onClick={handleRegister}>Register</button>
         </div>
         <div className='AuthFooterRow'>
-          <p className='AuthFooter'><a href="#">Login</a></p>
+          <p className='AuthFooter'><Link to="/">Login</Link></p>
         </div>
+        <Outlet />
       </div>
     </div>
   );
