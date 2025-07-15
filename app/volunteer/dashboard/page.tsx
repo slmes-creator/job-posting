@@ -25,22 +25,14 @@ const VolunteerDashboard: React.FC = () => {
       if (!userProfile) return
 
       try {
-        // Fetch both queries in parallel for better performance
-        const [jobsSnapshot, applicationsSnapshot] = await Promise.all([
-          getDocs(query(
-            collection(db, "jobs"),
-            where("status", "==", "open"),
-            orderBy("createdAt", "desc"),
-            limit(6)
-          )),
-          getDocs(query(
-            collection(db, "applications"),
-            where("volunteerId", "==", userProfile.uid),
-            orderBy("appliedAt", "desc")
-          ))
-        ])
-
-        // Process jobs data
+        // Fetch recent job opportunities
+        const jobsQuery = query(
+          collection(db, "jobs"),
+          where("status", "==", "open"),
+          orderBy("createdAt", "desc"),
+          limit(6),
+        )
+        const jobsSnapshot = await getDocs(jobsQuery)
         const jobsData = jobsSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
@@ -49,7 +41,13 @@ const VolunteerDashboard: React.FC = () => {
         })) as Job[]
         setRecentJobs(jobsData)
 
-        // Process applications data
+        // Fetch user's applications
+        const applicationsQuery = query(
+          collection(db, "applications"),
+          where("volunteerId", "==", userProfile.uid),
+          orderBy("appliedAt", "desc"),
+        )
+        const applicationsSnapshot = await getDocs(applicationsQuery)
         const applicationsData = applicationsSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),

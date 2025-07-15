@@ -113,12 +113,12 @@ const HomePage: React.FC = () => {
           Why Choose VolunteerHub?
         </Typography>
 
-        <Grid container spacing={4} justifyContent={"center"}>
+        <Grid container spacing={4} justifyContent="center">
           {features.map((feature, index) => (
             <Grid item xs={12} sm={6} md={3} key={index}>
               <Card sx={{ height: "100%", textAlign: "center", p: 2 }}>
                 <CardContent>
-                  <Box sx={{ mb: 3 }}>{feature.icon}</Box>
+                  <Box sx={{ mb: 2 }}>{feature.icon}</Box>
                   <Typography variant="h6" component="h3" gutterBottom>
                     {feature.title}
                   </Typography>

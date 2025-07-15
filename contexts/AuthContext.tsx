@@ -11,7 +11,7 @@ import {
   updateProfile,
 } from "firebase/auth"
 import { doc, getDoc, setDoc } from "firebase/firestore"
-import { auth, db } from "@/lib/firebase"
+import { auth, db, ensureFirebaseInitialized } from "@/lib/firebase"
 import type { User, VolunteerProfile, OrganizationProfile } from "@/lib/types"
 
 interface AuthContextType {
@@ -39,14 +39,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true)
 
   const login = async (email: string, password: string) => {
-    if (!auth) throw new Error("Firebase Auth not initialized")
-    await signInWithEmailAndPassword(auth, email, password)
+    const { auth: firebaseAuth } = await ensureFirebaseInitialized()
+    await signInWithEmailAndPassword(firebaseAuth, email, password)
   }
 
   const register = async (email: string, password: string, userData: Partial<User>) => {
-    if (!auth) throw new Error("Firebase Auth not initialized")
+    const { auth: firebaseAuth, db: firebaseDb } = await ensureFirebaseInitialized()
 
-    const { user } = await createUserWithEmailAndPassword(auth, email, password)
+    const { user } = await createUserWithEmailAndPassword(firebaseAuth, email, password)
 
     await updateProfile(user, {
       displayName: userData.displayName,
@@ -74,12 +74,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }),
     }
 
-    await setDoc(doc(db, "users", user.uid), profileData)
+    await setDoc(doc(firebaseDb, "users", user.uid), profileData)
   }
 
   const logout = async () => {
-    if (!auth) throw new Error("Firebase Auth not initialized")
-    await signOut(auth)
+    const { auth: firebaseAuth } = await ensureFirebaseInitialized()
+    await signOut(firebaseAuth)
   }
 
   useEffect(() => {
@@ -93,9 +93,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (user) {
         try {
-          const userDoc = await getDoc(doc(db, "users", user.uid))
-          if (userDoc.exists()) {
-            setUserProfile(userDoc.data() as User)
+          if (!db) {
+            console.error("Firestore not initialized")
+            setUserProfile(null)
+          } else {
+            const userDoc = await getDoc(doc(db, "users", user.uid))
+            if (userDoc.exists()) {
+              setUserProfile(userDoc.data() as User)
+            }
           }
         } catch (error) {
           console.error("Error fetching user profile:", error)
