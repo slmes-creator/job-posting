@@ -52,7 +52,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onApply, onView, showApplyButton
           <Box display="flex" alignItems="center" gap={1}>
             <Group fontSize="small" color="action" />
             <Typography variant="body2">
-              {job.currentVolunteers}/{job.maxVolunteers} volunteers
+              {job.currentVolunteers}/{job.volunteersNeeded} volunteers required
             </Typography>
           </Box>
         </Box>

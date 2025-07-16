@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Container,
   Typography,
@@ -16,27 +16,31 @@ import {
   MenuItem,
   FormControlLabel,
   Checkbox,
-  FormGroup,
   Alert,
   Breadcrumbs,
   Link as MuiLink,
 } from "@mui/material"
 import { ArrowBack, LocationOn, CalendarToday, People } from "@mui/icons-material"
 import { useAuth } from "@/contexts/AuthContext"
-import { collection, addDoc, serverTimestamp } from "firebase/firestore"
+import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore"
 import { db } from "@/lib/firebase"
-import type { OrganizationProfile } from "@/lib/types"
+import type { OrganizationProfile, Job } from "@/lib/types"
 import LoadingSpinner from "@/components/UI/LoadingSpinner"
 import Link from "next/link"
 import ProtectedRoute from "@/components/ProtectedRoute"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 
-const CreateJob: React.FC = () => {
+const EditJobPage: React.FC = () => {
   const { userProfile } = useAuth()
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
+  const params = useParams()
+  const jobId = params.id as string
+  
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
+  const [job, setJob] = useState<Job | null>(null)
 
   const organizationProfile = userProfile as OrganizationProfile
 
@@ -52,8 +56,9 @@ const CreateJob: React.FC = () => {
     category: "",
     description: "",
     requirements: "",
-    contactEmail: organizationProfile?.email || "",
+    contactEmail: "",
     contactPhone: "",
+    status: "open" as "open" | "closed" | "completed",
   })
 
   const categories = [
@@ -69,6 +74,61 @@ const CreateJob: React.FC = () => {
     "Other"
   ]
 
+  // Fetch existing job data
+  useEffect(() => {
+    const fetchJob = async () => {
+      if (!jobId || !userProfile) return
+
+      try {
+        const jobDoc = await getDoc(doc(db, "jobs", jobId))
+        
+        if (!jobDoc.exists()) {
+          setError("Job not found")
+          return
+        }
+
+        const jobData = jobDoc.data() as Job
+        
+        // Check if user owns this job
+        if (jobData.organizationId !== userProfile.uid) {
+          setError("You don't have permission to edit this job")
+          return
+        }
+
+        setJob({ ...jobData, id: jobDoc.id })
+        
+        // Populate form with existing data
+        const jobDate = jobData.date?.toDate ? jobData.date.toDate() : new Date(jobData.date)
+        const dateString = jobDate.toISOString().split('T')[0]
+        const timeString = jobDate.toTimeString().split(' ')[0].substring(0, 5)
+
+        setFormData({
+          title: jobData.title || "",
+          location: jobData.location || "",
+          isRemote: jobData.isRemote || false,
+          date: dateString,
+          time: timeString,
+          duration: jobData.duration || "",
+          volunteersNeeded: jobData.volunteersNeeded?.toString() || "",
+          category: jobData.category || "",
+          description: jobData.description || "",
+          requirements: jobData.requirements || "",
+          contactEmail: jobData.contactEmail || "",
+          contactPhone: jobData.contactPhone || "",
+          status: jobData.status || "open",
+        })
+
+      } catch (err: any) {
+        console.error("Error fetching job:", err)
+        setError("Failed to load job data")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchJob()
+  }, [jobId, userProfile])
+
   const handleInputChange = (field: string) => (event: any) => {
     const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value
     setFormData(prev => ({
@@ -79,7 +139,7 @@ const CreateJob: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-    setLoading(true)
+    setSaving(true)
     setError("")
 
     try {
@@ -88,7 +148,7 @@ const CreateJob: React.FC = () => {
         throw new Error("Please fill in all required fields")
       }
 
-      // Create job document
+      // Update job document
       const jobData = {
         title: formData.title,
         location: formData.location,
@@ -101,13 +161,11 @@ const CreateJob: React.FC = () => {
         requirements: formData.requirements,
         contactEmail: formData.contactEmail,
         contactPhone: formData.contactPhone,
-        organizationId: userProfile?.uid,
-        organizationName: organizationProfile?.organizationName || "Unknown Organization",
-        status: "open",
-        createdAt: serverTimestamp(),
+        status: formData.status,
+        updatedAt: serverTimestamp(),
       }
 
-      await addDoc(collection(db, "jobs"), jobData)
+      await updateDoc(doc(db, "jobs", jobId), jobData)
       
       setSuccess(true)
       
@@ -117,40 +175,29 @@ const CreateJob: React.FC = () => {
       }, 2000)
 
     } catch (err: any) {
-      setError(err.message || "Failed to create job posting")
+      setError(err.message || "Failed to update job")
     } finally {
-      setLoading(false)
+      setSaving(false)
     }
   }
 
-  const handleSaveDraft = async () => {
-    setLoading(true)
-    setError("")
+  if (loading) {
+    return <LoadingSpinner message="Loading job details..." />
+  }
 
-    try {
-      // Save draft logic (similar to submit but with a different status)
-      const draftData = {
-        ...formData,
-        status: "draft",
-        organizationId: userProfile?.uid,
-        organizationName: organizationProfile?.organizationName || "Unknown Organization",
-        createdAt: serverTimestamp(),
-      }
-
-      await addDoc(collection(db, "jobs"), draftData)
-
-      setSuccess(true)
-      
-      // Redirect after 2 seconds
-      setTimeout(() => {
-        router.push("/organization/jobs")
-      }, 2000)
-
-    } catch (err: any) {
-      setError(err.message || "Failed to save draft")
-    } finally {
-      setLoading(false)
-    }
+  if (error && !job) {
+    return (
+      <ProtectedRoute requiredRole="organization">
+        <Container maxWidth="md" sx={{ py: 4 }}>
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+          <Button component={Link} href="/organization/jobs" variant="outlined">
+            Back to Jobs
+          </Button>
+        </Container>
+      </ProtectedRoute>
+    )
   }
 
   if (success) {
@@ -158,7 +205,7 @@ const CreateJob: React.FC = () => {
       <ProtectedRoute requiredRole="organization">
         <Container maxWidth="md" sx={{ py: 4 }}>
           <Alert severity="success" sx={{ mb: 3 }}>
-            ✅ Job posted successfully! Redirecting to your job listings...
+            ✅ Job updated successfully! Redirecting to your job listings...
           </Alert>
         </Container>
       </ProtectedRoute>
@@ -174,15 +221,15 @@ const CreateJob: React.FC = () => {
             <ArrowBack sx={{ mr: 1, fontSize: 16 }} />
             Job Management
           </MuiLink>
-          <Typography color="text.primary">Post New Job</Typography>
+          <Typography color="text.primary">Edit Job</Typography>
         </Breadcrumbs>
 
         {/* Header */}
         <Typography variant="h4" component="h1" gutterBottom>
-          Post a Volunteer Opportunity
+          Edit Job Posting
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-          Reach volunteers in your community and make a difference together
+          Update your volunteer opportunity details
         </Typography>
 
         {error && (
@@ -303,6 +350,21 @@ const CreateJob: React.FC = () => {
                 </Select>
               </FormControl>
 
+              {/* Status */}
+              <FormControl fullWidth sx={{ mb: 3 }}>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={formData.status}
+                  onChange={handleInputChange("status")}
+                  label="Status"
+                >
+                  <MenuItem value="open">Open</MenuItem>
+                  <MenuItem value="closed">Closed</MenuItem>
+                  <MenuItem value="completed">Completed</MenuItem>
+                  <MenuItem value="draft">Draft</MenuItem>
+                </Select>
+              </FormControl>
+
               {/* Description */}
               <TextField
                 label="Job Description"
@@ -358,24 +420,17 @@ const CreateJob: React.FC = () => {
                   component={Link}
                   href="/organization/jobs"
                   variant="outlined"
-                  disabled={loading}
+                  disabled={saving}
                 >
                   Cancel
                 </Button>
                 <Button
-                    variant="outlined" 
-                    onClick={handleSaveDraft} 
-                    disabled={loading}
-                >
-                  Save Draft
-                </Button>
-                <Button
                   type="submit"
                   variant="contained"
-                  disabled={loading}
+                  disabled={saving}
                   size="large"
                 >
-                  {loading ? <LoadingSpinner size={20} /> : "Post Job"}
+                  {saving ? <LoadingSpinner size={20} /> : "Update Job"}
                 </Button>
               </Box>
             </form>
@@ -383,7 +438,7 @@ const CreateJob: React.FC = () => {
         </Card>
       </Container>
     </ProtectedRoute>
-  )
+  ) 
 }
 
-export default CreateJob
+export default EditJobPage

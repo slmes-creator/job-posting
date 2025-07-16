@@ -39,14 +39,18 @@ const VolunteerJobsPage: React.FC = () => {
         const jobsQuery = query(collection(db, "jobs"), where("status", "==", "open"), orderBy("createdAt", "desc"))
 
         const jobsSnapshot = await getDocs(jobsQuery)
-        const jobsData = jobsSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          date: doc.data().date.toDate(),
-          createdAt: doc.data().createdAt.toDate(),
-        })) as Job[]
+        const jobsData = jobsSnapshot.docs.map((doc) => {
+          const data = doc.data()
+          return {
+            id: doc.id,
+            ...data,
+            date: data.date?.toDate ? data.date.toDate() : new Date(data.date) || new Date(),
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt) || new Date(),
+          }
+        }) as Job[]
 
         setJobs(jobsData)
+        console.log("Fetched jobs:", jobsData)
         setFilteredJobs(jobsData)
 
         // Fetch user's applied jobs
@@ -101,7 +105,7 @@ const VolunteerJobsPage: React.FC = () => {
 
   const handleApply = async (jobId: string) => {
     // This would typically open a modal or navigate to application page
-    console.log("Apply to job:", jobId)
+    window.location.href = `/volunteer/jobs/${jobId}/apply`
   }
 
   const handleViewJob = (jobId: string) => {

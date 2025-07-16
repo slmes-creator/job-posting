@@ -33,13 +33,17 @@ const VolunteerDashboard: React.FC = () => {
           limit(6),
         )
         const jobsSnapshot = await getDocs(jobsQuery)
-        const jobsData = jobsSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          date: doc.data().date.toDate(),
-          createdAt: doc.data().createdAt.toDate(),
-        })) as Job[]
+        const jobsData = jobsSnapshot.docs.map((doc) => {
+          const data = doc.data()
+          return {
+            id: doc.id,
+            ...data,
+            date: data.date?.toDate ? data.date.toDate() : new Date(data.date) || new Date(),
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt) || new Date(),
+          }
+        }) as Job[]
         setRecentJobs(jobsData)
+        console.log("Fetched recent jobs:", jobsData)
 
         // Fetch user's applications
         const applicationsQuery = query(
@@ -48,12 +52,15 @@ const VolunteerDashboard: React.FC = () => {
           orderBy("appliedAt", "desc"),
         )
         const applicationsSnapshot = await getDocs(applicationsQuery)
-        const applicationsData = applicationsSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          appliedAt: doc.data().appliedAt.toDate(),
-          completedAt: doc.data().completedAt?.toDate(),
-        })) as Application[]
+        const applicationsData = applicationsSnapshot.docs.map((doc) => {
+          const data = doc.data()
+          return {
+            id: doc.id,
+            ...data,
+            appliedAt: data.appliedAt?.toDate ? data.appliedAt.toDate() : new Date(data.appliedAt) || new Date(),
+            completedAt: data.completedAt?.toDate ? data.completedAt.toDate() : data.completedAt ? new Date(data.completedAt) : undefined,
+          }
+        }) as Application[]
         setApplications(applicationsData)
       } catch (error) {
         console.error("Error fetching dashboard data:", error)

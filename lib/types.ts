@@ -37,7 +37,7 @@ export interface Job {
   maxVolunteers: number
   currentVolunteers: number
   requirements: string[]
-  status: "open" | "closed" | "completed"
+  status: "open" | "closed" | "completed" | "draft"
   createdAt: Date
   applicants: string[]
 }

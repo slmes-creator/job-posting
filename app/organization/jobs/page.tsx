@@ -49,12 +49,16 @@ const OrganizationJobsPage: React.FC = () => {
           orderBy("createdAt", "desc")
         )
         const jobsSnapshot = await getDocs(jobsQuery)
-        const jobsData = jobsSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          date: doc.data().date.toDate(),
-          createdAt: doc.data().createdAt.toDate(),
-        })) as Job[]
+        const jobsData = jobsSnapshot.docs.map((doc) => {
+          const data = doc.data()
+          return {
+            id: doc.id,
+            ...data,
+            date: data.date?.toDate ? data.date.toDate() : new Date(data.date) || new Date(),
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt) || new Date(),
+          }
+        }) as Job[]
+        console.log("Fetched jobs:", jobsData)
         setJobs(jobsData)
 
         // Fetch applications for these jobs
@@ -66,12 +70,15 @@ const OrganizationJobsPage: React.FC = () => {
             orderBy("appliedAt", "desc")
           )
           const applicationsSnapshot = await getDocs(applicationsQuery)
-          const applicationsData = applicationsSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-            appliedAt: doc.data().appliedAt.toDate(),
-            completedAt: doc.data().completedAt?.toDate(),
-          })) as Application[]
+          const applicationsData = applicationsSnapshot.docs.map((doc) => {
+            const data = doc.data()
+            return {
+              id: doc.id,
+              ...data,
+              appliedAt: data.appliedAt?.toDate ? data.appliedAt.toDate() : new Date(data.appliedAt) || new Date(),
+              completedAt: data.completedAt?.toDate ? data.completedAt.toDate() : data.completedAt ? new Date(data.completedAt) : undefined,
+            }
+          }) as Application[]
           setApplications(applicationsData)
         }
       } catch (error) {
