@@ -85,7 +85,7 @@ const ApplyJobPage: React.FC = () => {
 
     try {
       const applicationRef = doc(db, "applications", `${userProfile.uid}_${job.id}`)
-      await updateDoc(applicationRef, {
+      await addDoc(applicationRef, {
         volunteerId: userProfile.uid,
         jobId: job.id,
         coverLetter: applicationData.coverLetter,
