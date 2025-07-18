@@ -223,7 +223,7 @@ const OrganizationDashboard: React.FC = () => {
                           />
                         </TableCell>
                         <TableCell>
-                          <Button size="small" variant="outlined">
+                          <Button size="small" variant="outlined" component={Link} href={`/organization/applications/${application.id}`}>
                             Review
                           </Button>
                         </TableCell>

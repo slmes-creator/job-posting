@@ -55,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const profileData = {
       uid: user.uid,
       email: user.email!,
-      displayName: userData.displayName!,
+      displayName: userData.displayName || (userData as OrganizationProfile).organizationName!,
       role: userData.role!,
       createdAt: new Date(),
       ...(userData.role === "volunteer"

@@ -43,7 +43,6 @@ const VolunteerDashboard: React.FC = () => {
           }
         }) as Job[]
         setRecentJobs(jobsData)
-        console.log("Fetched recent jobs:", jobsData)
 
         // Fetch user's applications
         const applicationsQuery = query(

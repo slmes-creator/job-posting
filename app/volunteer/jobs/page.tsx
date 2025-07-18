@@ -50,7 +50,6 @@ const VolunteerJobsPage: React.FC = () => {
         }) as Job[]
 
         setJobs(jobsData)
-        console.log("Fetched jobs:", jobsData)
         setFilteredJobs(jobsData)
 
         // Fetch user's applied jobs

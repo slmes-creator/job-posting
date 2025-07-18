@@ -58,7 +58,6 @@ const OrganizationJobsPage: React.FC = () => {
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt) || new Date(),
           }
         }) as Job[]
-        console.log("Fetched jobs:", jobsData)
         setJobs(jobsData)
 
         // Fetch applications for these jobs
