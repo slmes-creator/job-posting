@@ -27,15 +27,16 @@ const RegisterPage: React.FC = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    displayName: "",
     role: "volunteer" as "volunteer" | "organization",
     // Volunteer fields
+    fullName: "",
     school: "",
     grade: 9,
     // Organization fields
     organizationName: "",
     description: "",
     website: "",
+    address: "",
     contactPhone: "",
   })
 
@@ -71,10 +72,11 @@ const RegisterPage: React.FC = () => {
       setLoading(true)
 
       const userData = {
-        displayName: formData.displayName,
+        displayName: formData.role === "volunteer" ? formData.fullName : formData.organizationName,
         role: formData.role,
         ...(formData.role === "volunteer"
           ? {
+              fullName: formData.fullName,
               school: formData.school,
               grade: formData.grade,
             }
@@ -82,6 +84,7 @@ const RegisterPage: React.FC = () => {
               organizationName: formData.organizationName,
               description: formData.description,
               website: formData.website,
+              address: formData.address,
               contactPhone: formData.contactPhone,
             }),
       }
@@ -90,6 +93,7 @@ const RegisterPage: React.FC = () => {
       router.push("/")
     } catch (error: any) {
       setError("Failed to create account. Please try again.")
+      console.log("Registration error:", error) 
     } finally {
       setLoading(false)
     }
@@ -155,17 +159,6 @@ const RegisterPage: React.FC = () => {
               onChange={handleChange}
             />
 
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="displayName"
-              label="Full Name"
-              id="displayName"
-              value={formData.displayName}
-              onChange={handleChange}
-            />
-
             {/* Role Selection */}
             <FormControl component="fieldset" sx={{ mt: 2, mb: 2 }}>
               <FormLabel component="legend">I am a:</FormLabel>
@@ -178,6 +171,17 @@ const RegisterPage: React.FC = () => {
             {/* Conditional Fields */}
             {formData.role === "volunteer" ? (
               <>
+                <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="fullName"
+                label="Full Name"
+                id="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+              />
+
                 <TextField
                   margin="normal"
                   required
@@ -240,6 +244,17 @@ const RegisterPage: React.FC = () => {
                   label="Website (Optional)"
                   id="website"
                   value={formData.website}
+                  onChange={handleChange}
+                />
+
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="address"
+                  label="Address"
+                  id="address"
+                  value={formData.address}
                   onChange={handleChange}
                 />
 

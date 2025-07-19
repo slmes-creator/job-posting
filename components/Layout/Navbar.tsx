@@ -171,7 +171,7 @@ const Navbar: React.FC = () => {
                 <MenuItem onClick={handleClose}>
                   <Typography>{userProfile?.displayName}</Typography>
                 </MenuItem>
-                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                <MenuItem onClick={handleLogout}>Log Out</MenuItem>
               </Menu>
             </div>
           ) : (

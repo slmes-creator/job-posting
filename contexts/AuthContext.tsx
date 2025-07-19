@@ -60,6 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       createdAt: new Date(),
       ...(userData.role === "volunteer"
         ? {
+            fullName: (userData as VolunteerProfile).fullName,
             school: (userData as VolunteerProfile).school,
             grade: (userData as VolunteerProfile).grade,
             totalHours: 0,
@@ -70,6 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             organizationName: (userData as OrganizationProfile).organizationName,
             description: (userData as OrganizationProfile).description,
             website: (userData as OrganizationProfile).website,
+            address: (userData as OrganizationProfile).address,
             contactPhone: (userData as OrganizationProfile).contactPhone,
           }),
     }

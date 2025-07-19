@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Container, Paper, TextField, Button, Typography, Box, Alert, Link as MuiLink } from "@mui/material"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
@@ -13,8 +13,19 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  const { login } = useAuth()
+  const { login, userProfile, currentUser } = useAuth()
   const router = useRouter()
+
+  // Redirect to appropriate dashboard once user profile is loaded after login
+  useEffect(() => {
+    if (currentUser && userProfile) {
+      if (userProfile.role === 'volunteer') {
+        router.push('/volunteer/dashboard')
+      } else if (userProfile.role === 'organization') {
+        router.push('/organization/dashboard')
+      }
+    }
+  }, [currentUser, userProfile, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,7 +34,6 @@ const LoginPage: React.FC = () => {
       setError("")
       setLoading(true)
       await login(email, password)
-      router.push("/")
     } catch (error: any) {
       setError("Failed to log in. Please check your credentials.")
     } finally {

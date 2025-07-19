@@ -8,6 +8,8 @@ export interface User {
 
 export interface VolunteerProfile extends User {
   role: "volunteer"
+  displayName: string // Always set to fullName
+  fullName: string
   school: string
   grade: number
   totalHours: number
@@ -17,9 +19,11 @@ export interface VolunteerProfile extends User {
 
 export interface OrganizationProfile extends User {
   role: "organization"
+  displayName: string // Always set to organizationName
   organizationName: string
   description: string
   website?: string
+  address?: string
   contactPhone: string
 }
 
