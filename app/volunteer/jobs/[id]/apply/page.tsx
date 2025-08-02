@@ -20,10 +20,11 @@ import {
   Breadcrumbs,
   Link as MuiLink,
 } from "@mui/material"
-import { ArrowBack, LocationOn, CalendarToday, People } from "@mui/icons-material"
+import { ArrowBack, LocationOn, CalendarToday, People, CloudUpload } from "@mui/icons-material"
 import { useAuth } from "@/contexts/AuthContext"
 import { doc, getDoc, addDoc, collection, serverTimestamp } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
+import { db, storage } from "@/lib/firebase"
 import type { OrganizationProfile, Job } from "@/lib/types"
 import LoadingSpinner from "@/components/UI/LoadingSpinner"
 import Link from "next/link"
@@ -41,8 +42,17 @@ const ApplyJobPage: React.FC = () => {
     coverLetter: "",
     availability: "",
     skills: "",
-    references: "",
+    resumeFile: null as File | null,
+    uploading: false,
+    resumeUrl: "",
+    references: {
+      name: "",
+      affiliation: "",
+      email: "",
+      phone: "",
+    },
   })
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     const fetchJobDetails = async () => {
@@ -59,8 +69,8 @@ const ApplyJobPage: React.FC = () => {
         setJob({
           ...jobData,
           id: jobDoc.id,
-          date: jobData.date?.toDate ? jobData.date.toDate() : new Date(jobData.date) || new Date(),
-          createdAt: jobData.createdAt?.toDate ? jobData.createdAt.toDate() : new Date(jobData.createdAt) || new Date(),
+          date: jobData.date && typeof (jobData.date as any).toDate === 'function' ? (jobData.date as any).toDate() : new Date(jobData.date as any) || new Date(),
+          createdAt: jobData.createdAt && typeof (jobData.createdAt as any).toDate === 'function' ? (jobData.createdAt as any).toDate() : new Date(jobData.createdAt as any) || new Date(),
         })
       } catch (err) {
         console.error("Error fetching job details:", err)
@@ -78,24 +88,84 @@ const ApplyJobPage: React.FC = () => {
     setApplicationData((prev) => ({ ...prev, [name]: value }))
   }
 
+  const handleReferenceChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target
+    setApplicationData(prev => ({
+      ...prev,
+      references: {
+        ...prev.references,
+        [field]: value
+      }
+    }))
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+      if (!allowedTypes.includes(file.type)) {
+        setError('Please upload a PDF or Word document')
+        return
+      }
+      
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('File size must be less than 5MB')
+        return
+      }
+
+      setApplicationData(prev => ({
+        ...prev,
+        resumeFile: file
+      }))
+      setError(null)
+    }
+  }
+
+  const uploadResume = async (file: File): Promise<string> => {
+    if (!userProfile) throw new Error('User not authenticated')
+    
+    const fileName = `resumes/${userProfile.uid}/${Date.now()}_${file.name}`
+    const storageRef = ref(storage, fileName)
+    
+    setUploading(true)
+    try {
+      const snapshot = await uploadBytes(storageRef, file)
+      const downloadURL = await getDownloadURL(snapshot.ref)
+      return downloadURL
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const handleSubmitApplication = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!userProfile || !job) return
 
+    setLoading(true)
+    setError(null)
+
     try {
+      let resumeUrl = ""
+      
+      // Upload resume if provided
+      if (applicationData.resumeFile) {
+        resumeUrl = await uploadResume(applicationData.resumeFile)
+      }
+
       await addDoc(collection(db, "applications"), {
         volunteerId: userProfile.uid,
         volunteerName: userProfile.displayName,
         volunteerEmail: userProfile.email,
-        volunteerSchool: userProfile.school,
-        volunteerGrade: userProfile.grade,
         jobId: job.id,
         organizationId: job.organizationId,
         status: "pending",
         coverLetter: applicationData.coverLetter,
         availability: applicationData.availability,
         skills: applicationData.skills,
+        resumeUrl: resumeUrl,
         references: applicationData.references,
         appliedAt: serverTimestamp(),
       })
@@ -167,7 +237,7 @@ const ApplyJobPage: React.FC = () => {
                 <Box display="flex" alignItems="center" gap={1}>
                   <People fontSize="small" />
                   <Typography variant="body2">
-                    {job.volunteersNeeded} volunteers needed
+                    {job.maxVolunteers} volunteers needed
                   </Typography>
                 </Box>
               </Box>
@@ -227,18 +297,88 @@ const ApplyJobPage: React.FC = () => {
                 helperText="Optional - any relevant skills or experience"
               />
 
-              <TextField
-                name="references"
-                label="References"
-                placeholder="Any references or contacts (optional)"
-                value={applicationData.references}
-                onChange={handleInputChange}
-                multiline
-                rows={2}
-                fullWidth
-                sx={{ mb: 4 }}
-                helperText="Optional - teacher, coach, or other adult reference"
-              />
+              {/* Resume Upload */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                  Resume/CV (Optional)
+                </Typography>
+                <input
+                  type="file"
+                  id="resumeFile"
+                  name="resumeFile"
+                  accept=".pdf,.doc,.docx"
+                  onChange={handleFileChange}
+                  style={{ display: 'none' }}
+                />
+                <label htmlFor="resumeFile">
+                  <Button
+                    variant="outlined"
+                    component="span"
+                    startIcon={<CloudUpload />}
+                    disabled={applicationData.uploading}
+                    sx={{ mb: 1 }}
+                  >
+                    {applicationData.resumeFile ? 'Change Resume' : 'Upload Resume'}
+                  </Button>
+                </label>
+                {applicationData.resumeFile && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Selected: {applicationData.resumeFile.name} ({(applicationData.resumeFile.size / 1024 / 1024).toFixed(2)} MB)
+                    </Typography>
+                  </Box>
+                )}
+                {applicationData.uploading && (
+                  <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <LoadingSpinner size={16} />
+                    <Typography variant="body2" color="text.secondary">
+                      Uploading resume...
+                    </Typography>
+                  </Box>
+                )}
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                  PDF or Word format, maximum 5MB
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: "flex", gap: 1, mb: 3 }}>
+                <TextField
+                  name="referenceName"
+                  label="Reference Name"
+                  placeholder="Full name of reference"
+                  value={applicationData.references.name}
+                  onChange={handleReferenceChange('name')}
+                  sx={{ flex: 1 }}
+                  helperText="Teacher, coach, or mentor"
+                />
+                <TextField
+                  name="referenceAffiliation"
+                  label="Affiliation/Title"
+                  placeholder="Teacher at XYZ School"
+                  value={applicationData.references.affiliation}
+                  onChange={handleReferenceChange('affiliation')}
+                  sx={{ flex: 1 }}
+                  helperText="Their role or organization"
+                />
+                <TextField
+                  name="referenceEmail"
+                  label="Email"
+                  placeholder="reference@email.com"
+                  value={applicationData.references.email}
+                  onChange={handleReferenceChange('email')}
+                  sx={{ flex: 1 }}
+                  helperText="Contact email"
+                />
+                <TextField
+                  name="referencePhone"
+                  label="Phone"
+                  placeholder="(555) 123-4567"
+                  value={applicationData.references.phone}
+                  onChange={handleReferenceChange('phone')}
+                  sx={{ flex: 1 }}
+                  helperText="Contact phone (optional)"
+                />
+              </Box>
 
               <Box display="flex" gap={2} justifyContent="flex-end">
                 <Button

@@ -19,7 +19,7 @@ import {
   Paper,
   Chip,
 } from "@mui/material"
-import { Work, People, Schedule, Add } from "@mui/icons-material"
+import { Work, People, Schedule, Add, ArrowForward } from "@mui/icons-material"
 import { useAuth } from "@/contexts/AuthContext"
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore"
 import { db } from "@/lib/firebase"
@@ -212,9 +212,9 @@ const OrganizationDashboard: React.FC = () => {
                             label={application.status}
                             color={
                               application.status === "completed"
-                                ? "success"
+                                ? "primary"
                                 : application.status === "approved"
-                                  ? "primary"
+                                  ? "success"
                                   : application.status === "declined"
                                     ? "error"
                                     : "default"
@@ -223,7 +223,7 @@ const OrganizationDashboard: React.FC = () => {
                           />
                         </TableCell>
                         <TableCell>
-                          <Button size="small" variant="outlined" component={Link} href={`/organization/applications/${application.id}`}>
+                          <Button size="small" variant="outlined" component={Link} href={`/organization/jobs/${application.jobId}/applications`}>
                             Review
                           </Button>
                         </TableCell>
@@ -255,10 +255,13 @@ const OrganizationDashboard: React.FC = () => {
                     <Typography variant="h6" gutterBottom>
                       {job.title}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" paragraph>
-                      {job.description.substring(0, 100)}...
-                    </Typography>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 0, flexGrow: 1 }}>
+                        {job.description.substring(0, 100)}...
+                      </Typography>
+                      <ArrowForward sx={{ fontSize: 16, color: "primary.main" }} />
+                    </Box>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mt: 3, mb: 2, gap: 3 }}>
                       <Chip label={job.status} color={job.status === "open" ? "success" : "default"} size="small" />
                       <Typography variant="body2">
                         {applications.filter(app => app.jobId === job.id).length} applications

@@ -11,7 +11,7 @@ import {
   updateProfile,
 } from "firebase/auth"
 import { doc, getDoc, setDoc } from "firebase/firestore"
-import { auth, db, ensureFirebaseInitialized } from "@/lib/firebase"
+import { auth, db } from "@/lib/firebase"
 import type { User, VolunteerProfile, OrganizationProfile } from "@/lib/types"
 
 interface AuthContextType {
@@ -39,14 +39,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true)
 
   const login = async (email: string, password: string) => {
-    const { auth: firebaseAuth } = await ensureFirebaseInitialized()
-    await signInWithEmailAndPassword(firebaseAuth, email, password)
+    await signInWithEmailAndPassword(auth, email, password)
   }
 
   const register = async (email: string, password: string, userData: Partial<User>) => {
-    const { auth: firebaseAuth, db: firebaseDb } = await ensureFirebaseInitialized()
-
-    const { user } = await createUserWithEmailAndPassword(firebaseAuth, email, password)
+    const { user } = await createUserWithEmailAndPassword(auth, email, password)
 
     await updateProfile(user, {
       displayName: userData.displayName,
@@ -76,12 +73,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }),
     }
 
-    await setDoc(doc(firebaseDb, "users", user.uid), profileData)
+    await setDoc(doc(db, "users", user.uid), profileData)
   }
 
   const logout = async () => {
-    const { auth: firebaseAuth } = await ensureFirebaseInitialized()
-    await signOut(firebaseAuth)
+    await signOut(auth)
   }
 
   useEffect(() => {

@@ -52,8 +52,21 @@ export interface Application {
   volunteerId: string
   volunteerName: string
   volunteerEmail: string
+  volunteerPhone?: string
+  volunteerSchool?: string
   status: "pending" | "approved" | "declined" | "completed"
   appliedAt: Date
+  reviewedAt?: Date
   hoursCompleted?: number
   completedAt?: Date
+  coverLetter?: string
+  availability?: string
+  skills?: string
+  organizationResponse?: string
+  references: {
+    name?: string
+    affiliation?: string
+    email?: string
+    phone?: string
+  }
 }

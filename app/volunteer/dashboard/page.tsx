@@ -72,6 +72,7 @@ const VolunteerDashboard: React.FC = () => {
   }, [userProfile])
 
   if (loading) {
+    console.log(userProfile)
     return <LoadingSpinner message="Loading your dashboard..." />
   }
 
