@@ -45,20 +45,20 @@ const JobCard: React.FC<JobCardProps> = ({ job, onApply, onView, showApplyButton
           <Box display="flex" alignItems="center" gap={1}>
             <Schedule fontSize="small" color="action" />
             <Typography variant="body2">
-              {dayjs(job.date).format("MMM D, YYYY")} • {job.startTime} - {job.endTime}
+              {dayjs(job.date).format("MMM D, YYYY")}
             </Typography>
           </Box>
 
           <Box display="flex" alignItems="center" gap={1}>
             <Group fontSize="small" color="action" />
             <Typography variant="body2">
-              {job.currentVolunteers}/{job.volunteersNeeded} volunteers required
+              {job.volunteersNeeded} volunteers required
             </Typography>
           </Box>
         </Box>
 
         <Box display="flex" gap={1} flexWrap="wrap">
-          <Chip label={`${job.hoursOffered} hours`} size="small" color="primary" variant="outlined" />
+          <Chip label={job.duration} size="small" color="primary" variant="outlined" />
           <Chip label={job.status} size="small" color={job.status === "open" ? "success" : "default"} />
         </Box>
       </CardContent>

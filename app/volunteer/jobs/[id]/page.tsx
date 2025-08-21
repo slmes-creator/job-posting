@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
+import { Metadata } from "next"
 import {
   Container,
   Typography,
@@ -32,7 +33,7 @@ import {
   Cancel,
   AccessTime,
   Category,
-} from "@mui/icons-material"
+} from "@mui/icons-material"    
 import { useAuth } from "@/contexts/AuthContext"
 import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, orderBy, getDocs } from "firebase/firestore"
 import { db } from "@/lib/firebase"

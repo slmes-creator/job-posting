@@ -71,6 +71,11 @@ const VolunteerDashboard: React.FC = () => {
     fetchDashboardData()
   }, [userProfile])
 
+  const handleApply = async (jobId: string) => {
+    // This would typically open a modal or navigate to application page
+    window.location.href = `/volunteer/jobs/${jobId}/apply`
+  }
+
   if (loading) {
     console.log(userProfile)
     return <LoadingSpinner message="Loading your dashboard..." />
@@ -218,6 +223,7 @@ const VolunteerDashboard: React.FC = () => {
             <Grid item xs={12} md={6} lg={4} key={job.id}>
               <JobCard
                 job={job}
+                onApply={handleApply}
                 onView={(jobId) => (window.location.href = `/volunteer/jobs/${jobId}`)}
                 isApplied={applications.some((app) => app.jobId === job.id)}
               />

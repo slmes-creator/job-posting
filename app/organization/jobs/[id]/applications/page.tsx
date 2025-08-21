@@ -49,9 +49,11 @@ import Link from "next/link"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { useRouter, useParams } from "next/navigation"
 
+import { DayPicker, type DateRange } from "react-day-picker"
+import 'react-day-picker/dist/style.css'
+
 const ReviewApplicationPage: React.FC = () => {
   const { userProfile } = useAuth()
-  const router = useRouter()
   const params = useParams()
   const id = params.id as string
 
@@ -66,6 +68,9 @@ const ReviewApplicationPage: React.FC = () => {
   const [responseMessage, setResponseMessage] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "declined">("all")
+  const [selectedApprovalDates, setSelectedApprovalDates] = useState<DateRange[]>([])
+  const [currentRange, setCurrentRange] = useState<DateRange | undefined>()
+  const [showDateSelector, setShowDateSelector] = useState(false)
 
   useEffect(() => {
     if (!userProfile || !id) return
@@ -182,41 +187,74 @@ const ReviewApplicationPage: React.FC = () => {
 
     setUpdating(true)
     try {
-      // Update the application status in Firestore
-      await updateDoc(doc(db, "applications", selectedApplication.id), {
+      // Prepare update data
+      const updateData: any = {
         status: actionType === "approve" ? "approved" : "declined",
         reviewedAt: serverTimestamp(),
         organizationResponse: responseMessage.trim(),
         updatedAt: serverTimestamp(),
-      })
+      }
+
+      // Add approved dates if approving and ranges are selected
+      if (actionType === "approve" && selectedApprovalDates.length > 0) {
+        updateData.approvedDateRanges = selectedApprovalDates.map(range => ({
+          from: range.from,
+          to: range.to,
+          formattedRange: `${range.from?.toLocaleDateString()} - ${range.to?.toLocaleDateString()}`
+        }))
+
+        // Create a summary for emails
+        const datesSummary = selectedApprovalDates
+          .map(range => `${range.from?.toLocaleDateString()} - ${range.to?.toLocaleDateString()}`)
+          .join('\n')
+        updateData.approvedDatesSummary = datesSummary
+      }
+
+      // Update the application status in Firestore
+      await updateDoc(doc(db, "applications", selectedApplication.id), updateData)
 
       // Send email notification
       if (job && userProfile) {
         try {
+          let emailMessage = responseMessage.trim()
+
+          if (actionType === "approve" && selectedApprovalDates.length > 0) {
+            const datesSummary = selectedApprovalDates
+              .map((range, index) => `Range ${index + 1}: ${range.from?.toLocaleDateString()} - ${range.to?.toLocaleDateString()}`)
+              .join('\n')
+            emailMessage += `\n\nApproved Date Ranges:\n${datesSummary}`
+          }
+
           await sendApplicationEmail(
             selectedApplication.volunteerEmail,
             selectedApplication.volunteerName,
             job.title,
             actionType === "approve" ? "approved" : "declined",
-            responseMessage.trim(),
+            emailMessage,
             userProfile.displayName || "Organization"
           )
         } catch (emailError) {
           console.error('Failed to send email:', emailError)
-          // Don't fail the entire operation if email fails
         }
       }
 
       // Update local state
       const reviewedAt = new Date()
-      setApplications(prev => prev.map(app => 
+      setApplications(prev => prev.map(app =>
         app.id === selectedApplication.id
           ? {
-              ...app,
-              status: actionType === "approve" ? "approved" : "declined",
-              reviewedAt,
-              organizationResponse: responseMessage.trim(),
-            }
+            ...app,
+            status: actionType === "approve" ? "approved" : "declined",
+            reviewedAt,
+            organizationResponse: responseMessage.trim(),
+            approvedDateRanges: actionType === "approve" && selectedApprovalDates.length > 0
+              ? selectedApprovalDates.map(range => ({
+                from: range.from,
+                to: range.to,
+                formattedRange: `${range.from?.toLocaleDateString()} - ${range.to?.toLocaleDateString()}`
+              }))
+              : undefined
+          }
           : app
       ))
 
@@ -225,11 +263,22 @@ const ReviewApplicationPage: React.FC = () => {
         status: actionType === "approve" ? "approved" : "declined",
         reviewedAt,
         organizationResponse: responseMessage.trim(),
+        approvedDateRanges: actionType === "approve" && selectedApprovalDates.length > 0
+          ? selectedApprovalDates.map(range => ({
+            from: range.from,
+            to: range.to,
+            formattedRange: `${range.from?.toLocaleDateString()} - ${range.to?.toLocaleDateString()}`
+          }))
+          : undefined
       } : null)
 
+      // Reset dialog state
       setDialogOpen(false)
       setResponseMessage("")
       setActionType(null)
+      setSelectedApprovalDates([])
+      setCurrentRange(undefined)
+      setShowDateSelector(false)
 
     } catch (error) {
       console.error("Error updating application:", error)
@@ -326,9 +375,15 @@ const ReviewApplicationPage: React.FC = () => {
             </CardContent>
           </Card>
         ) : (
-          <Box display="flex" gap={3} sx={{ height: 'calc(100vh - 200px)' }}>
+          <Box display="flex" gap={3} sx={{ height: 'calc(100vh - 200px)', minWidth: 0 }}>
             {/* Left Sidebar - Applications List */}
-            <Card sx={{ width: 400, display: 'flex', flexDirection: 'column' }}>
+            <Card sx={{ 
+              width: 400,
+              minWidth: 400,
+              flexShrink: 0, 
+              display: 'flex', 
+              flexDirection: 'column' 
+              }}>
               <CardContent sx={{ pb: 1 }}>
                 <Typography variant="h6" gutterBottom>
                   Applications ({filteredApplications.length})
@@ -418,7 +473,12 @@ const ReviewApplicationPage: React.FC = () => {
             </Card>
 
             {/* Right Panel - Application Details */}
-            <Card sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+            <Card sx={{ 
+              flexGrow: 1,
+              minWidth: 0,
+              display: 'flex', 
+              flexDirection: 'column' 
+              }}>
               {selectedApplication ? (
                 <CardContent sx={{ flexGrow: 1, overflow: 'auto' }}>
                   {/* Volunteer Header */}
@@ -572,6 +632,29 @@ const ReviewApplicationPage: React.FC = () => {
                         </Box>
                       )}
 
+                      {/* Resume/Portfolio */}
+                      {selectedApplication.resumeUrl && (
+                        <Box sx={{ mb: 3 }}>
+                          <Typography variant="subtitle2" color="primary" gutterBottom>
+                            Resume/Portfolio
+                          </Typography>
+                          <Paper variant="outlined" sx={{ p: 2, bgcolor: "grey.50" }}>
+                            <Button
+                              variant="outlined"
+                              color="primary"
+                              fullWidth
+                              onClick={() => window.open(selectedApplication.resumeUrl, '_blank')}
+                              sx={{ mb: 1 }}
+                            >
+                              📄 View Resume/Portfolio
+                            </Button>
+                            <Typography variant="caption" color="text.secondary" display="block" textAlign="center">
+                              Opens in new tab
+                            </Typography>
+                          </Paper>
+                        </Box>
+                      )}
+
                       {/* Organization Response */}
                       {selectedApplication.organizationResponse && (
                         <Box sx={{ mb: 3 }}>
@@ -653,6 +736,134 @@ const ReviewApplicationPage: React.FC = () => {
                 : "Please provide feedback to help the volunteer understand your decision."
               }
             </Typography>
+
+            {/* Date Selection for Approval */}
+            {actionType === "approve" && (
+              <Box sx={{ mb: 3 }}>
+                <Box display="flex" alignItems="center" gap={2} mb={2}>
+                  <Typography variant="subtitle2" color="primary">
+                    Approved Dates
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => setShowDateSelector(!showDateSelector)}
+                  >
+                    {showDateSelector ? "Hide Calendar" : "Select Dates"}
+                  </Button>
+                </Box>
+
+                {/* Show volunteer's availability for reference */}
+                {selectedApplication?.availability && (
+                  <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: "grey.50" }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Volunteer's Available Dates:
+                    </Typography>
+                    <Typography variant="body2">
+                      {selectedApplication.availability}
+                    </Typography>
+                  </Paper>
+                )}
+
+                {/* Date Picker */}
+                {showDateSelector && (
+                  <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Select date ranges for this volunteer. You can add multiple ranges.
+                    </Typography>
+
+                    <DayPicker
+                      mode="range"
+                      selected={currentRange}
+                      onSelect={setCurrentRange}
+                      disabled={{ before: new Date() }}
+                      showOutsideDays
+                      captionLayout="dropdown"
+                      className="range-calendar"
+                    />
+
+                    {/* Add Range Button */}
+                    {currentRange?.from && currentRange?.to && (
+                      <Box sx={{ mt: 2, textAlign: 'center' }}>
+                        <Button
+                          variant="contained"
+                          size="small"
+                          onClick={() => {
+                            if (currentRange.from && currentRange.to) {
+                              // Check for overlapping ranges
+                              const isOverlapping = selectedApprovalDates.some(range => {
+                                if (!range.from || !range.to || !currentRange.from || !currentRange.to) return false
+                                return (
+                                  (currentRange.from >= range.from && currentRange.from <= range.to) ||
+                                  (currentRange.to >= range.from && currentRange.to <= range.to) ||
+                                  (currentRange.from <= range.from && currentRange.to >= range.to)
+                                )
+                              })
+
+                              if (!isOverlapping) {
+                                setSelectedApprovalDates(prev => [...prev, currentRange])
+                                setCurrentRange(undefined)
+                              } else {
+                                alert('This date range overlaps with an existing range. Please select different dates.')
+                              }
+                            }
+                          }}
+                        >
+                          Add Date Range
+                        </Button>
+                      </Box>
+                    )}
+
+                    {/* Current selection preview */}
+                    {currentRange?.from && currentRange?.to && (
+                      <Box sx={{ mt: 2, p: 1, bgcolor: 'primary.50', borderRadius: 1 }}>
+                        <Typography variant="caption" color="primary">
+                          Current selection: {currentRange.from.toLocaleDateString()} - {currentRange.to.toLocaleDateString()}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Paper>
+                )}
+
+                {/* Show all selected date ranges */}
+                {selectedApprovalDates.length > 0 && (
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Approved Date Ranges ({selectedApprovalDates.length}):
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {selectedApprovalDates.map((range, index) => (
+                        <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Chip
+                            label={`${range.from?.toLocaleDateString()} - ${range.to?.toLocaleDateString()}`}
+                            color="success"
+                            variant="filled"
+                            onDelete={() => {
+                              setSelectedApprovalDates(prev => prev.filter((_, i) => i !== index))
+                            }}
+                            sx={{ flexGrow: 1 }}
+                          />
+                          <Typography variant="caption" color="text.secondary">
+                            Range {index + 1}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+
+                    {/* Clear all button */}
+                    <Button
+                      size="small"
+                      color="error"
+                      onClick={() => setSelectedApprovalDates([])}
+                      sx={{ mt: 1 }}
+                    >
+                      Clear All Ranges
+                    </Button>
+                  </Box>
+                )}
+              </Box>
+            )}
+
             <TextField
               label={actionType === "approve" ? "Welcome message & next steps" : "Feedback message"}
               placeholder={actionType === "approve" 

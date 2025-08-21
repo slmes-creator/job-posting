@@ -2,30 +2,38 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
+import { DayPicker, type DateRange } from "react-day-picker"
 import {
   Container,
   Typography,
   Card,
   CardContent,
+  Divider,
   Box,
   Button,
+  Chip,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormControlLabel,
-  Checkbox,
   Alert,
   Breadcrumbs,
   Link as MuiLink,
+  Grow,
 } from "@mui/material"
 import { ArrowBack, LocationOn, CalendarToday, People, CloudUpload } from "@mui/icons-material"
 import { useAuth } from "@/contexts/AuthContext"
-import { doc, getDoc, addDoc, collection, serverTimestamp } from "firebase/firestore"
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
+import { 
+  doc, 
+  getDoc, 
+  addDoc, 
+  collection, 
+  serverTimestamp 
+} from "firebase/firestore"
+import { 
+  ref, 
+  uploadBytes, 
+  getDownloadURL 
+} from "firebase/storage"
 import { db, storage } from "@/lib/firebase"
-import type { OrganizationProfile, Job } from "@/lib/types"
+import type { Job } from "@/lib/types"
 import LoadingSpinner from "@/components/UI/LoadingSpinner"
 import Link from "next/link"
 import ProtectedRoute from "@/components/ProtectedRoute"
@@ -38,12 +46,14 @@ const ApplyJobPage: React.FC = () => {
   const [job, setJob] = useState<Job | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedDates, setSelectedDates] = useState<DateRange | undefined>()
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([])
+  const [uploading, setUploading] = useState(false)
   const [applicationData, setApplicationData] = useState({
     coverLetter: "",
     availability: "",
     skills: "",
     resumeFile: null as File | null,
-    uploading: false,
     resumeUrl: "",
     references: {
       name: "",
@@ -52,7 +62,6 @@ const ApplyJobPage: React.FC = () => {
       phone: "",
     },
   })
-  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     const fetchJobDetails = async () => {
@@ -103,9 +112,9 @@ const ApplyJobPage: React.FC = () => {
     const file = e.target.files?.[0]
     if (file) {
       // Validate file type
-      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/jpg', 'image/png']
       if (!allowedTypes.includes(file.type)) {
-        setError('Please upload a PDF or Word document')
+        setError('Please upload a PDF, JPG/PNG, or Word document')
         return
       }
       
@@ -134,10 +143,24 @@ const ApplyJobPage: React.FC = () => {
       const snapshot = await uploadBytes(storageRef, file)
       const downloadURL = await getDownloadURL(snapshot.ref)
       return downloadURL
+    } catch (err) {
+      console.log('Upload failed: ', err)
+      throw new Error('Failed to upload resume')
     } finally {
       setUploading(false)
     }
   }
+
+  // Keep the text availability field in sync with selected calendar dates
+  useEffect(() => {
+    if (!selectedDates?.from || !selectedDates?.to) {
+      setApplicationData((prev) => ({ ...prev, availability: "" }))
+      return
+    }
+    
+    const formatted = `${selectedDates.from.toLocaleDateString()} - ${selectedDates.to.toLocaleDateString()}`
+    setApplicationData((prev) => ({ ...prev, availability: formatted }))
+  }, [selectedDates])
 
   const handleSubmitApplication = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -152,7 +175,13 @@ const ApplyJobPage: React.FC = () => {
       
       // Upload resume if provided
       if (applicationData.resumeFile) {
-        resumeUrl = await uploadResume(applicationData.resumeFile)
+        try {
+          resumeUrl = await uploadResume(applicationData.resumeFile)
+        } catch (uploadError) {
+          setError('Resume upload failed. Please try again or skip the resume.')
+          setLoading(false)
+          return  // ← Stop form submission if upload fails
+        }
       }
 
       await addDoc(collection(db, "applications"), {
@@ -164,7 +193,8 @@ const ApplyJobPage: React.FC = () => {
         status: "pending",
         coverLetter: applicationData.coverLetter,
         availability: applicationData.availability,
-        skills: applicationData.skills,
+        availabilityRange: selectedDates,
+        skills: selectedSkills.join(", "),
         resumeUrl: resumeUrl,
         references: applicationData.references,
         appliedAt: serverTimestamp(),
@@ -256,6 +286,12 @@ const ApplyJobPage: React.FC = () => {
             </Typography>
 
             <form onSubmit={handleSubmitApplication}>
+              {error && (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                  {error}
+                </Alert>
+              )}
+
               <TextField
                 name="coverLetter"
                 label="Cover Letter"
@@ -270,113 +306,188 @@ const ApplyJobPage: React.FC = () => {
                 helperText="Share your motivation and relevant experience"
               />
 
-              <TextField
-                name="availability"
-                label="Availability"
-                placeholder="When are you available? Any scheduling conflicts?"
-                value={applicationData.availability}
-                onChange={handleInputChange}
-                multiline
-                rows={2}
-                fullWidth
-                required
-                sx={{ mb: 3 }}
-                helperText="Let us know your availability for this opportunity"
-              />
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
+                  📅 Availability Calendar
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Select a date range when you're available to volunteer
+                </Typography>
+                <Box className="calendar-container">
+                  <DayPicker
+                    mode="range"
+                    selected={selectedDates}
+                    onSelect={setSelectedDates}
+                    disabled={{ before: new Date() }}
+                    showOutsideDays
+                    captionLayout="dropdown"
+                    className="range-calendar"
+                  />
+                </Box>
+                
+                {/* Display selected range */}
+                {selectedDates?.from && selectedDates?.to && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Selected availability period:
+                    </Typography>
+                    <Chip 
+                      label={`${selectedDates.from.toLocaleDateString()} - ${selectedDates.to.toLocaleDateString()}`}
+                      color="primary"
+                      variant="filled"
+                      onDelete={() => setSelectedDates(undefined)}
+                    />
+                  </Box>
+                )}
+
+                {/* Show current range being selected */}
+                {selectedDates && (selectedDates.from || selectedDates.to) && !(selectedDates.from && selectedDates.to) && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Selecting range:
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                      {selectedDates.from && (
+                        <Chip 
+                          label={`From: ${selectedDates.from.toLocaleDateString()}`}
+                          size="small" 
+                          color="secondary"
+                          variant="outlined"
+                        />
+                      )}
+                      {selectedDates.to && (
+                        <Chip 
+                          label={`To: ${selectedDates.to.toLocaleDateString()}`}
+                          size="small" 
+                          color="secondary"
+                          variant="outlined"
+                        />
+                      )}
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+
+              <Divider sx={{ my: 2 }} />
+
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                Skills (Optional)
+              </Typography>
 
               <TextField
                 name="skills"
                 label="Relevant Skills"
-                placeholder="What skills do you have that would be helpful for this role?"
+                placeholder="Add skills..."
                 value={applicationData.skills}
                 onChange={handleInputChange}
-                multiline
-                rows={2}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && applicationData.skills.trim()) {
+                    e.preventDefault()
+                    const newSkill = applicationData.skills.trim()
+                    if (!selectedSkills.includes(newSkill)) {
+                      setSelectedSkills(prev => [...prev, newSkill])
+                      setApplicationData(prev => ({ ...prev, skills: "" }))
+                    }
+                  }
+                }}
                 fullWidth
-                sx={{ mb: 3 }}
-                helperText="Optional - any relevant skills or experience"
+                sx={{ mb: 2 }}
+                helperText="Press Enter to add skills"
               />
 
+              {/* Display added skills */}
+              {selectedSkills.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Added skills ({selectedSkills.length}):
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                    {selectedSkills.map((skill, index) => (
+                      <Grow
+                        key={skill}
+                        in={true}
+                        timeout={300 + (index * 100)}
+                      >
+                        <Chip 
+                          label={skill}
+                          size="small" 
+                          color="secondary"
+                          variant="filled"
+                          onDelete={() => {
+                            setSelectedSkills(prev => prev.filter(s => s !== skill))
+                          }}
+                        />
+                      </Grow>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
+              <Divider sx={{ my: 2 }} />
+
               {/* Resume Upload */}
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                Resume/CV (Optional)
+              </Typography>
               <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                  Resume/CV (Optional)
-                </Typography>
                 <input
-                  type="file"
-                  id="resumeFile"
-                  name="resumeFile"
-                  accept=".pdf,.doc,.docx"
-                  onChange={handleFileChange}
+                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
                   style={{ display: 'none' }}
+                  id="resume-upload"
+                  type="file"
+                  onChange={handleFileChange}
                 />
-                <label htmlFor="resumeFile">
+                <label htmlFor="resume-upload">
                   <Button
                     variant="outlined"
                     component="span"
                     startIcon={<CloudUpload />}
-                    disabled={applicationData.uploading}
                     sx={{ mb: 1 }}
                   >
-                    {applicationData.resumeFile ? 'Change Resume' : 'Upload Resume'}
+                    Upload Resume
                   </Button>
                 </label>
                 {applicationData.resumeFile && (
-                  <Box sx={{ mt: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Selected: {applicationData.resumeFile.name} ({(applicationData.resumeFile.size / 1024 / 1024).toFixed(2)} MB)
-                    </Typography>
-                  </Box>
-                )}
-                {applicationData.uploading && (
-                  <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <LoadingSpinner size={16} />
-                    <Typography variant="body2" color="text.secondary">
-                      Uploading resume...
-                    </Typography>
-                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Selected: {applicationData.resumeFile.name}
+                  </Typography>
                 )}
                 <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-                  PDF or Word format, maximum 5MB
+                  PDF, Word format, or JPG/PNG image, maximum 5MB
                 </Typography>
               </Box>
 
-              <Box sx={{ display: "flex", gap: 1, mb: 3 }}>
+              <Divider sx={{ my: 2 }} />
+
+              {/* References */}
+              <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                References (Optional)
+              </Typography>
+              <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, mb: 3 }}>
                 <TextField
-                  name="referenceName"
                   label="Reference Name"
-                  placeholder="Full name of reference"
                   value={applicationData.references.name}
                   onChange={handleReferenceChange('name')}
-                  sx={{ flex: 1 }}
-                  helperText="Teacher, coach, or mentor"
+                  fullWidth
                 />
                 <TextField
-                  name="referenceAffiliation"
-                  label="Affiliation/Title"
-                  placeholder="Teacher at XYZ School"
+                  label="Organization/Affiliation"
                   value={applicationData.references.affiliation}
                   onChange={handleReferenceChange('affiliation')}
-                  sx={{ flex: 1 }}
-                  helperText="Their role or organization"
+                  fullWidth
                 />
                 <TextField
-                  name="referenceEmail"
                   label="Email"
-                  placeholder="reference@email.com"
+                  type="email"
                   value={applicationData.references.email}
                   onChange={handleReferenceChange('email')}
-                  sx={{ flex: 1 }}
-                  helperText="Contact email"
+                  fullWidth
                 />
                 <TextField
-                  name="referencePhone"
                   label="Phone"
-                  placeholder="(555) 123-4567"
                   value={applicationData.references.phone}
                   onChange={handleReferenceChange('phone')}
-                  sx={{ flex: 1 }}
-                  helperText="Contact phone (optional)"
+                  fullWidth
                 />
               </Box>
 
@@ -391,10 +502,9 @@ const ApplyJobPage: React.FC = () => {
                   type="submit"
                   variant="contained"
                   size="large"
-                  disabled={loading}
-                  onClick={handleSubmitApplication}
+                  disabled={loading || !selectedDates?.from || !selectedDates?.to}
                 >
-                  {loading ? <LoadingSpinner size={20} /> : "Submit Application"}
+                  {loading ? "Submitting..." : "Submit Application"}
                 </Button>
               </Box>
             </form>
