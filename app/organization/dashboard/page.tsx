@@ -267,7 +267,7 @@ const OrganizationDashboard: React.FC = () => {
                         {applications.filter(app => app.jobId === job.id).length} applications
                       </Typography>
                     </Box>
-                    <Button size="small" variant="outlined" fullWidth>
+                    <Button size="small" variant="outlined" component={Link} href={`/organization/jobs/${job.id}/applications`} fullWidth>
                       View Details
                     </Button>
                   </CardContent>

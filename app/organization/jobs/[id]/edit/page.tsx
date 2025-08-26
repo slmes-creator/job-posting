@@ -19,10 +19,14 @@ import {
   Alert,
   Breadcrumbs,
   Link as MuiLink,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material"
-import { ArrowBack, LocationOn, CalendarToday, People } from "@mui/icons-material"
+import { ArrowBack, LocationOn, CalendarToday, People, Delete as DeleteIcon } from "@mui/icons-material"
 import { useAuth } from "@/contexts/AuthContext"
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore"
+import { doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import type { OrganizationProfile, Job } from "@/lib/types"
 import LoadingSpinner from "@/components/UI/LoadingSpinner"
@@ -41,6 +45,8 @@ const EditJobPage: React.FC = () => {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
   const [job, setJob] = useState<Job | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
   const organizationProfile = userProfile as OrganizationProfile
 
@@ -178,6 +184,42 @@ const EditJobPage: React.FC = () => {
       setError(err.message || "Failed to update job")
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleDeleteJob = async () => {
+    if (!job || !jobId) return
+
+    setDeleting(true)
+    try {
+
+      const applicationsQuery = query(
+        collection(db, "applications"),
+        where("jobId", "==", jobId)
+      )
+      const applicationsSnapshot = await getDocs(applicationsQuery)
+
+      // Delete all applications (or mark as job-deleted)
+      const deletePromises = applicationsSnapshot.docs.map(doc =>
+        deleteDoc(doc.ref)
+        // Or update with status: updateDoc(doc.ref, { jobStatus: "deleted" })
+      )
+
+      await Promise.all(deletePromises)
+
+      // Then delete the job
+      await deleteDoc(doc(db, "jobs", jobId))
+
+      // Redirect to jobs list
+      router.push("/organization/jobs?deleted=true")
+
+      console.log("Job deleted successfully")
+
+    } catch (err: any) {
+      console.error("Error deleting job:", err)
+      setError("Failed to delete job. Please try again.")
+      setDeleting(false)
+      setDeleteConfirmOpen(false)
     }
   }
 
@@ -416,6 +458,17 @@ const EditJobPage: React.FC = () => {
 
               {/* Submit Buttons */}
               <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
+  
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={() => setDeleteConfirmOpen(true)}
+                  disabled={saving || deleting}
+                  startIcon={<DeleteIcon />}
+                >
+                  Delete Job
+                </Button>
+
                 <Button
                   component={Link}
                   href="/organization/jobs"
@@ -437,6 +490,43 @@ const EditJobPage: React.FC = () => {
           </CardContent>
         </Card>
       </Container>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          ⚠️ Delete Job Posting
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Are you sure you want to delete this job posting?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            <strong>"{formData.title}"</strong>
+          </Typography>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            This action cannot be undone. All applications for this job will also be affected.
+          </Alert>
+          <Typography variant="body2" color="text.secondary">
+            Consider closing the job instead if you just want to stop accepting new applications.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDeleteConfirmOpen(false)}
+            disabled={deleting}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteJob}
+            color="error"
+            variant="contained"
+            disabled={deleting}
+          >
+            {deleting ? <LoadingSpinner size={20} /> : "Delete Job"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </ProtectedRoute>
   ) 
 }
