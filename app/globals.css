@@ -1,0 +1,387 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* react-day-picker styles */
+@import "react-day-picker/dist/style.css";
+
+/* Custom DayPicker styling to match Material-UI theme */
+.rdp {
+  --rdp-cell-size: 44px;
+  --rdp-accent-color: #1976d2;
+  --rdp-background-color: #1976d2;
+  --rdp-accent-color-dark: #115293;
+  --rdp-background-color-dark: #115293;
+  --rdp-outline: 2px solid var(--rdp-accent-color);
+  --rdp-outline-selected: 2px solid var(--rdp-accent-color);
+  margin: 0;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+}
+
+.rdp-months {
+  display: flex;
+  justify-content: center;
+}
+
+.rdp-month {
+  margin: 0 0.5rem;
+}
+
+.rdp-table {
+  margin: 0;
+  max-width: none;
+}
+
+.rdp-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.rdp-caption_label {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #1976d2;
+}
+
+.rdp-nav {
+  display: flex;
+  align-items: center;
+}
+
+.rdp-nav_button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: transparent;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rdp-nav_button:hover {
+  background-color: #f5f5f5;
+  color: #1976d2;
+}
+
+.rdp-nav_button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rdp-head_cell {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: #666;
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.rdp-cell {
+  text-align: center;
+  position: relative;
+  padding: 0;
+}
+
+.rdp-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--rdp-cell-size);
+  height: var(--rdp-cell-size);
+  border: none;
+  border-radius: 50%;
+  background-color: transparent;
+  color: #333;
+  font-size: 0.875rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.rdp-button:hover:not(.rdp-button_disabled) {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.rdp-button_selected {
+  background-color: var(--rdp-accent-color) !important;
+  color: white !important;
+  font-weight: 500;
+}
+
+.rdp-button_selected:hover {
+  background-color: var(--rdp-accent-color-dark) !important;
+}
+
+/* Range selection styling */
+.rdp-day_range_start {
+  background-color: var(--rdp-accent-color) !important;
+  color: white !important;
+  border-radius: 50% 0 0 50% !important;
+  font-weight: 600;
+}
+
+.rdp-day_range_end {
+  background-color: var(--rdp-accent-color) !important;
+  color: white !important;
+  border-radius: 0 50% 50% 0 !important;
+  font-weight: 600;
+}
+
+.rdp-day_range_middle {
+  background-color: var(--rdp-accent-color) !important;
+  color: white !important;
+  border-radius: 0 !important;
+  font-weight: 500;
+  position: relative;
+}
+
+/* Single day range (when start and end are the same) */
+.rdp-day_range_start.rdp-day_range_end {
+  border-radius: 50% !important;
+}
+
+/* Create visual connection between range days */
+.rdp-day_range_middle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -2px;
+  right: 0;
+  bottom: 0;
+  background-color: var(--rdp-accent-color);
+  z-index: -1;
+}
+
+.rdp-day_range_start::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -2px;
+  width: 4px;
+  bottom: 0;
+  background-color: var(--rdp-accent-color);
+  z-index: -1;
+}
+
+/* Override the selected_range modifier for connected appearance */
+.rdp .rdp-day_selected_range {
+  background-color: var(--rdp-accent-color) !important;
+  color: white !important;
+  border-radius: 0 !important;
+}
+
+/* Range hover effects */
+.rdp-day_range_start:hover,
+.rdp-day_range_end:hover {
+  background-color: var(--rdp-accent-color-dark) !important;
+}
+
+.rdp-day_range_middle:hover {
+  background-color: #bbdefb !important;
+}
+
+/* Selected range visual connection */
+.rdp-range_start {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.rdp-range_end {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+.rdp-range_middle {
+  border-radius: 0 !important;
+  background: linear-gradient(90deg, #e3f2fd 0%, #e3f2fd 100%);
+}
+
+/* Enhanced range calendar styling */
+.range-calendar .rdp-day_selected {
+  background-color: var(--rdp-accent-color) !important;
+  color: white !important;
+  font-weight: 600;
+  border: 2px solid var(--rdp-accent-color);
+}
+
+.range-calendar .rdp-day_range_start,
+.range-calendar .rdp-day_range_end {
+  background-color: var(--rdp-accent-color) !important;
+  color: white !important;
+  font-weight: 700;
+  border: 2px solid var(--rdp-accent-color);
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);
+}
+
+.range-calendar .rdp-day_range_middle {
+  background-color: rgba(25, 118, 210, 0.15) !important;
+  color: var(--rdp-accent-color) !important;
+  font-weight: 500;
+  border: 1px solid rgba(25, 118, 210, 0.2);
+}
+
+/* Highlight the entire range row */
+.range-calendar .rdp-day_range_middle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -50%;
+  right: -50%;
+  height: 2px;
+  background-color: var(--rdp-accent-color);
+  opacity: 0.3;
+  z-index: -1;
+  transform: translateY(-50%);
+}
+
+/* Make today more visible in range selection */
+.range-calendar .rdp-day_today.rdp-day_range_middle {
+  background-color: rgba(25, 118, 210, 0.25) !important;
+  font-weight: 600;
+}
+
+.rdp-button_today {
+  font-weight: 600;
+  color: #1976d2;
+  position: relative;
+}
+
+.rdp-button_today:not(.rdp-button_selected)::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #1976d2;
+}
+
+.rdp-button_disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.rdp-button_outside {
+  color: #bbb;
+}
+
+/* Calendar container styling */
+.calendar-container {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: fit-content;
+}
+
+/* Selected date chips styling */
+.selected-dates-container {
+  max-height: 100px;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
