@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Container,
   Typography,
@@ -17,6 +17,9 @@ import {
   FormControlLabel,
   Checkbox,
   FormGroup,
+  Chip,
+  Grow,
+  Divider,
   Alert,
   Breadcrumbs,
   Link as MuiLink,
@@ -30,6 +33,8 @@ import LoadingSpinner from "@/components/UI/LoadingSpinner"
 import Link from "next/link"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { useRouter } from "next/navigation"
+import { DayPicker } from "react-day-picker"
+import "react-day-picker/dist/style.css"
 
 const CreateJob: React.FC = () => {
   const { userProfile } = useAuth()
@@ -39,22 +44,80 @@ const CreateJob: React.FC = () => {
   const [error, setError] = useState("")
 
   const organizationProfile = userProfile as OrganizationProfile
+  const [selectedDates, setSelectedDates] = useState<Date | { from: Date; to?: Date } | undefined>()
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([])
+  const [selectedRequirements, setSelectedRequirements] = useState<string[]>([])
 
   // Form state
   const [formData, setFormData] = useState({
     title: "",
     location: "",
     isRemote: false,
-    date: "",
-    time: "",
+    startTime: "",
+    endTime: "",
     duration: "",
     volunteersNeeded: "",
     category: "",
     description: "",
     requirements: "",
+    skills: "",
     contactEmail: organizationProfile?.email || "",
     contactPhone: "",
   })
+
+  // Calculate duration when times change
+  useEffect(() => {
+    if (formData.startTime && formData.endTime) {
+      try {
+        // Parse time strings (format: "HH:MM")
+        const [startHour, startMin] = formData.startTime.split(':').map(Number);
+        const [endHour, endMin] = formData.endTime.split(':').map(Number);
+        
+        // Create Date objects for comparison
+        const start = new Date(2000, 0, 1, startHour, startMin);
+        const end = new Date(2000, 0, 1, endHour, endMin);
+        
+        // Check if end time is after start time
+        if (end > start) {
+          const diffMs = end.getTime() - start.getTime();
+          const hours = Math.floor(diffMs / (1000 * 60 * 60));
+          const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+          
+          let durationText = "";
+          if (hours > 0) durationText += `${hours}h`;
+          if (minutes > 0) durationText += `${minutes > 0 && hours > 0 ? " " : ""}${minutes}m`;
+          
+          setFormData(prev => ({
+            ...prev,
+            duration: durationText || "Less than 1 minute"
+          }));
+        } else if (end.getTime() === start.getTime()) {
+          setFormData(prev => ({
+            ...prev,
+            duration: "Instant"
+          }));
+        } else {
+          // End time is before start time
+          setFormData(prev => ({
+            ...prev,
+            duration: "Invalid time range"
+          }));
+        }
+      } catch (error) {
+        // Handle invalid time format
+        setFormData(prev => ({
+          ...prev,
+          duration: ""
+        }));
+      }
+    } else {
+      // Clear duration if either time is missing
+      setFormData(prev => ({
+        ...prev,
+        duration: ""
+      }));
+    }
+  }, [formData.startTime, formData.endTime]);
 
   const categories = [
     "Environment",
@@ -69,7 +132,7 @@ const CreateJob: React.FC = () => {
     "Other"
   ]
 
-  const handleInputChange = (field: string) => (event: any) => {
+  const handleInputChange = (field?: string) => (event: any) => {
     const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value
     setFormData(prev => ({
       ...prev,
@@ -84,8 +147,38 @@ const CreateJob: React.FC = () => {
 
     try {
       // Validation
-      if (!formData.title || !formData.location || !formData.date || !formData.description) {
-        throw new Error("Please fill in all required fields")
+      if (!formData.title || !formData.location || !selectedDates || !formData.description) {
+        throw new Error("Please fill in all required fields including date selection")
+      }
+
+      // Process selected dates
+      let startDate: Date;
+      let endDate: Date | null = null;
+      
+      if (selectedDates instanceof Date) {
+        // Single date selected
+        startDate = new Date(selectedDates);
+        if (formData.startTime) {
+          const dateStr = selectedDates.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+          startDate = new Date(`${dateStr}T${formData.startTime}:00`);
+        }
+      } else if (selectedDates && 'from' in selectedDates) {
+        // Date range selected
+        startDate = new Date(selectedDates.from);
+        if (formData.startTime) {
+          const dateStr = selectedDates.from.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+          startDate = new Date(`${dateStr}T${formData.startTime}:00`);
+        }
+        
+        if (selectedDates.to) {
+          endDate = new Date(selectedDates.to);
+          if (formData.endTime) {
+            const dateStr = selectedDates.to.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+            endDate = new Date(`${dateStr}T${formData.endTime}:00`);
+          }
+        }
+      } else {
+        throw new Error("Please select a date or date range");
       }
 
       // Create job document
@@ -93,12 +186,16 @@ const CreateJob: React.FC = () => {
         title: formData.title,
         location: formData.location,
         isRemote: formData.isRemote,
-        date: new Date(formData.date + (formData.time ? `T${formData.time}` : "")),
+        startDate: startDate,
+        endDate: endDate,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
         duration: formData.duration,
         volunteersNeeded: parseInt(formData.volunteersNeeded) || 1,
         category: formData.category,
         description: formData.description,
-        requirements: formData.requirements,
+        requirements: selectedRequirements,
+        skills: selectedSkills,
         contactEmail: formData.contactEmail,
         contactPhone: formData.contactPhone,
         organizationId: userProfile?.uid,
@@ -118,6 +215,7 @@ const CreateJob: React.FC = () => {
 
     } catch (err: any) {
       setError(err.message || "Failed to create job posting")
+      console.error("Error creating job posting:", err)
     } finally {
       setLoading(false)
     }
@@ -241,49 +339,96 @@ const CreateJob: React.FC = () => {
                 />
               </Box>
 
-              {/* Date and Time */}
-              <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-                <TextField
-                  label="Date"
-                  type="date"
-                  value={formData.date}
-                  onChange={handleInputChange("date")}
-                  required
-                  sx={{ flex: 1 }}
-                  InputLabelProps={{ shrink: true }}
-                  InputProps={{
-                    startAdornment: <CalendarToday sx={{ mr: 1, color: "text.secondary" }} />
-                  }}
-                />
-                <TextField
-                  label="Time"
-                  type="time"
-                  value={formData.time}
-                  onChange={handleInputChange("time")}
-                  sx={{ flex: 1 }}
-                  InputLabelProps={{ shrink: true }}
-                />
+              {/* Date Selection and Volunteers Needed */}
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Schedule & Capacity
+              </Typography>
+              
+              <Box sx={{ display: "flex", gap: 3, mb: 3 }}>
+                {/* Calendar */}
+                <Box sx={{ flex: 2 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    Select Date(s) *
+                  </Typography>
+                  <Card variant="outlined" sx={{ p: 2 }}>
+                    <DayPicker
+                      mode="range"
+                      selected={selectedDates}
+                      onSelect={setSelectedDates}
+                      disabled={{ before: new Date() }}
+                      modifiers={{
+                        selected: selectedDates
+                      }}
+                      modifiersStyles={{
+                        selected: { 
+                          backgroundColor: '#1976d2', 
+                          color: 'white',
+                          borderRadius: '4px'
+                        }
+                      }}
+                      style={{
+                        margin: 0,
+                      }}
+                    />
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                      Click a single date or drag to select a range
+                    </Typography>
+                  </Card>
+                </Box>
+
+                {/* Volunteers Needed */}
+                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', mt: 4 }}>
+                  <TextField
+                    label="Volunteers Needed"
+                    type="number"
+                    value={formData.volunteersNeeded}
+                    onChange={handleInputChange("volunteersNeeded")}
+                    InputProps={{
+                      startAdornment: <People sx={{ mr: 1, color: "text.secondary" }} />
+                    }}
+                    helperText="How many people?"
+                    sx={{ mb: 2 }}
+                  />
+                  
+                  {/* Selected dates display */}
+                  {selectedDates && (
+                    <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                      <Typography variant="subtitle2" color="primary">
+                        Selected:
+                      </Typography>
+                      <Typography variant="body2">
+                        {selectedDates instanceof Date 
+                          ? selectedDates.toLocaleDateString()
+                          : selectedDates.from 
+                            ? `${selectedDates.from.toLocaleDateString()}${selectedDates.to ? ` - ${selectedDates.to.toLocaleDateString()}` : ''}`
+                            : 'No date selected'
+                        }
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
               </Box>
 
-              {/* Duration and Volunteers Needed */}
+              {/* Time Range and Duration */}
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Time Details
+              </Typography>
               <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
                 <TextField
-                  label="Duration"
-                  placeholder="e.g., 3 hours, Half day"
-                  value={formData.duration}
-                  onChange={handleInputChange("duration")}
+                  label="Start Time"
+                  type="time"
+                  value={formData.startTime}
+                  onChange={handleInputChange("startTime")}
                   sx={{ flex: 1 }}
+                  InputLabelProps={{ shrink: true }}
                 />
                 <TextField
-                  label="Volunteers Needed"
-                  type="number"
-                  value={formData.volunteersNeeded}
-                  onChange={handleInputChange("volunteersNeeded")}
+                  label="End Time"
+                  type="time"
+                  value={formData.endTime}
+                  onChange={handleInputChange("endTime")}
                   sx={{ flex: 1 }}
-                  InputProps={{
-                    startAdornment: <People sx={{ mr: 1, color: "text.secondary" }} />
-                  }}
-                  helperText="How many people?"
+                  InputLabelProps={{ shrink: true }}
                 />
               </Box>
 
@@ -319,16 +464,105 @@ const CreateJob: React.FC = () => {
 
               {/* Requirements */}
               <TextField
-                label="Requirements & Skills"
-                placeholder="Any specific skills, age requirements, physical demands, or what volunteers should bring..."
+                name="requirements"
+                label="Requirements"
+                placeholder="Add requirements..."
                 value={formData.requirements}
                 onChange={handleInputChange("requirements")}
-                multiline
-                rows={3}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && formData.requirements.trim()) {
+                    e.preventDefault()
+                    const newRequirement = formData.requirements.trim()
+                    if (!selectedRequirements.includes(newRequirement)) {
+                      setSelectedRequirements(prev => [...prev, newRequirement])
+                      setFormData(prev => ({ ...prev, requirements: "" }))
+                    }
+                  }
+                }}
                 fullWidth
-                sx={{ mb: 3 }}
-                helperText="Optional - leave blank if no specific requirements"
+                sx={{ mb: 2 }}
+                helperText="Press Enter to add requirements"
               />
+
+              {/* Display added requirements */}
+              {selectedRequirements.length > 0 && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Added requirements ({selectedRequirements.length}):
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                    {selectedRequirements.map((requirement, index) => (
+                      <Grow
+                        key={requirement}
+                        in={true}
+                        timeout={300 + (index * 100)}
+                      >
+                        <Chip
+                          label={requirement}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                          sx={{ borderRadius: 1 }}
+                          onDelete={() => {
+                            setSelectedRequirements(prev => prev.filter(r => r !== requirement))
+                          }}
+                        />
+                      </Grow>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
+              <TextField
+                name="skills"
+                label="Relevant Skills"
+                placeholder="Add skills..."
+                value={formData.skills}
+                onChange={handleInputChange("skills")}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && formData.skills.trim()) {
+                    e.preventDefault()
+                    const newSkill = formData.skills.trim()
+                    if (!selectedSkills.includes(newSkill)) {
+                      setSelectedSkills(prev => [...prev, newSkill])
+                      setFormData(prev => ({ ...prev, skills: "" }))
+                    }
+                  }
+                }}
+                fullWidth
+                sx={{ mb: 2 }}
+                helperText="Press Enter to add skills"
+              />
+
+              {/* Display added skills */}
+              {selectedSkills.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Added skills ({selectedSkills.length}):
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                    {selectedSkills.map((skill, index) => (
+                      <Grow
+                        key={skill}
+                        in={true}
+                        timeout={300 + (index * 100)}
+                      >
+                        <Chip 
+                          label={skill}
+                          size="small" 
+                          color="secondary"
+                          variant="filled"
+                          onDelete={() => {
+                            setSelectedSkills(prev => prev.filter(s => s !== skill))
+                          }}
+                        />
+                      </Grow>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
+              <Divider sx={{ my: 2 }} />
 
               {/* Contact Information */}
               <Typography variant="h6" sx={{ mb: 2 }}>

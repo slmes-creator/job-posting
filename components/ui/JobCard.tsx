@@ -14,6 +14,73 @@ interface JobCardProps {
   isApplied?: boolean
 }
 
+const formatJobDates = (startDate: Date | null, endDate: Date | null, fallbackDate?: Date): string => {
+
+  const parseDate = (date: any): Date | null => {
+    if (!date) return null
+    
+    try {
+      // Handle Firestore Timestamp objects
+      if (date && typeof date === 'object' && 'seconds' in date && 'nanoseconds' in date) {
+        const timestamp = new Date(date.seconds * 1000 + date.nanoseconds / 1000000)
+        return isNaN(timestamp.getTime()) ? null : timestamp
+      }
+      
+      // If it's already a Date object, check if it's valid
+      if (date instanceof Date) {
+        return isNaN(date.getTime()) ? null : date
+      }
+      
+      // If it's a string or other format, try to parse it
+      const parsed = new Date(date)
+      return isNaN(parsed.getTime()) ? null : parsed
+    } catch {
+      return null
+    }
+  }
+
+  // Use startDate/endDate if available, otherwise fallback to original date
+  const start = parseDate(startDate) || parseDate(fallbackDate)
+  const end = parseDate(endDate)
+
+  if (!start) return "Date TBD"
+
+  // Single date
+  if (!end || start.valueOf() === end.valueOf()) {
+    return start.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
+  }
+
+  // Date range - smart formatting
+  const startYear = start.getFullYear()
+  const endYear = end.getFullYear()
+  const startMonth = start.getMonth()
+  const endMonth = end.getMonth()
+
+  if (startYear === endYear) {
+    if (startMonth === endMonth) {
+      // Same month and year
+      const startStr = start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+      const endStr = end.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', year: 'numeric' })
+      return `${startStr} - ${endStr}`
+    } else {
+      // Same year, different months
+      const startStr = start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+      const endStr = end.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+      return `${startStr} - ${endStr}`
+    }
+  } else {
+    // Different years
+    const startStr = start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+    const endStr = end.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+    return `${startStr} - ${endStr}`
+  }
+}
+
 const JobCard: React.FC<JobCardProps> = ({ job, onApply, onView, showApplyButton = true, isApplied = false }) => {
   return (
     <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
@@ -45,7 +112,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onApply, onView, showApplyButton
           <Box display="flex" alignItems="center" gap={1}>
             <Schedule fontSize="small" color="action" />
             <Typography variant="body2">
-              {dayjs(job.date).format("MMM D, YYYY")}
+              {formatJobDates(job.startDate, job.endDate, job.date)}
             </Typography>
           </Box>
 

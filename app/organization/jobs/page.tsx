@@ -55,6 +55,8 @@ const OrganizationJobsPage: React.FC = () => {
             id: doc.id,
             ...data,
             date: data.date?.toDate ? data.date.toDate() : new Date(data.date) || new Date(),
+            startDate: data.startDate?.toDate ? data.startDate.toDate() : data.startDate ? new Date(data.startDate) : null,
+            endDate: data.endDate?.toDate ? data.endDate.toDate() : data.endDate ? new Date(data.endDate) : null,
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt) || new Date(),
           }
         }) as Job[]
@@ -230,7 +232,10 @@ const OrganizationJobsPage: React.FC = () => {
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      {job.date.toLocaleDateString()}
+                      {job.startDate ? job.startDate.toLocaleDateString() : job.date.toLocaleDateString()}
+                      {job.endDate && (
+                        <> - {job.endDate.toLocaleDateString()}</>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Chip 

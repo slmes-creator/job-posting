@@ -52,6 +52,7 @@ const ApplyJobPage: React.FC = () => {
   const [applicationData, setApplicationData] = useState({
     coverLetter: "",
     availability: "",
+    availabilityNotes: "",
     skills: "",
     resumeFile: null as File | null,
     resumeUrl: "",
@@ -193,6 +194,7 @@ const ApplyJobPage: React.FC = () => {
         status: "pending",
         coverLetter: applicationData.coverLetter,
         availability: applicationData.availability,
+        availabilityNotes: applicationData.availabilityNotes,
         availabilityRange: selectedDates,
         skills: selectedSkills.join(", "),
         resumeUrl: resumeUrl,
@@ -313,16 +315,35 @@ const ApplyJobPage: React.FC = () => {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   Select a date range when you're available to volunteer
                 </Typography>
-                <Box className="calendar-container">
-                  <DayPicker
-                    mode="range"
-                    selected={selectedDates}
-                    onSelect={setSelectedDates}
-                    disabled={{ before: new Date() }}
-                    showOutsideDays
-                    captionLayout="dropdown"
-                    className="range-calendar"
-                  />
+                
+                <Box sx={{ display: "flex", gap: 3, mb: 2 }}>
+                  {/* Calendar */}
+                  <Box className="calendar-container" sx={{ flex: 1 }}>
+                    <DayPicker
+                      mode="range"
+                      selected={selectedDates}
+                      onSelect={setSelectedDates}
+                      disabled={{ before: new Date() }}
+                      showOutsideDays
+                      captionLayout="dropdown"
+                      className="range-calendar"
+                    />
+                  </Box>
+                  
+                  {/* Availability Notes */}
+                  <Box sx={{ flex: 1 }}>
+                    <TextField
+                      name="availabilityNotes"
+                      label="Availability Notes"
+                      placeholder="Add any specific details about your availability, preferred times, or scheduling constraints..."
+                      value={applicationData.availabilityNotes || ""}
+                      onChange={handleInputChange}
+                      multiline
+                      rows={6}
+                      fullWidth
+                      helperText="Optional - share any scheduling preferences or constraints"
+                    />
+                  </Box>
                 </Box>
                 
                 {/* Display selected range */}
