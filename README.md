@@ -25,7 +25,9 @@ A comprehensive web application connecting high school volunteers with meaningfu
 #### Getting Started
 
 **Account Setup**  
-Create an organization account by providing your organization details including organization name, description, website, and contact information. Once registered, complete your organization profile to help volunteers learn more about your mission and work.
+Create an organization account by providing your organization details including organization name, description, website, and contact information. 
+
+Once registered, complete your organization profile to help volunteers learn more about your mission and work.
 
 **Accessing Your Dashboard**  
 Navigate to your organization dashboard to manage all job postings, view applications, and track volunteer engagement. The dashboard provides an overview of active jobs, pending applications, and recent activity.

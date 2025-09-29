@@ -143,17 +143,15 @@ const VolunteerJobsPage: React.FC = () => {
           </Grid>
 
           <Grid item xs={12} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Location</InputLabel>
-              <Select value={locationFilter} label="Location" onChange={(e) => setLocationFilter(e.target.value)}>
-                <MenuItem value="">All Locations</MenuItem>
-                {uniqueLocations.map((location) => (
-                  <MenuItem key={location} value={location}>
-                    {location}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <TextField
+              fullWidth
+              placeholder="Search locations..."
+              value={locationFilter}
+              onChange={(e) => setLocationFilter(e.target.value)}
+              InputProps={{
+                startAdornment: <Search sx={{ mr: 1, color: "text.secondary" }} />,
+              }}
+            />
           </Grid>
 
           <Grid item xs={12} md={3}>

@@ -128,12 +128,12 @@ This is the dashboard after applications come in. Click on the Youth Camp Leader
 **[Screen: Application form opening for Youth Camp Leader position]**
 
 **Narrator:**
-"Applying is pretty straightforward, but there's room to really show who you are. Start with your cover letter - this is where you explain why you want to help with their youth camp and what experience you have with kids."
+"Applying is pretty straightforward, but there's room to really sell yourself. Start with your cover letter - this is where you explain why you want to help with their youth camp and what experience you have with kids."
 
 **[Screen: Interactive calendar for date selection]**
 
 **Narrator:**
-"Then pick your available dates using the calendar. Maybe the camp runs for two weeks but you can only do one - just select those dates. The calendar won't let you pick dates that have already passed."
+"Then pick your available dates using the calendar. Maybe the camp runs for two weeks but you can only do one - just select those dates. 
 
 **[Screen: Availability notes field next to calendar]**
 
@@ -162,16 +162,20 @@ This is the dashboard after applications come in. Click on the Youth Camp Leader
 **Narrator:**
 "After you apply, you can keep track of everything in one place:
 - Pending means they're still looking at applications
-- Approved means you got the gig - you'll see exactly which dates you're scheduled for
-- If they can't use you this time, they might leave feedback to help with future applications"
+- Approved means you got the job - and they will follow-up with you with more information
+- Otherwise if they can't use you this time, they might leave feedback to help with future applications"
 
 **[Screen: Approval notification email for Youth Camp Leader position]**
 
-"When you get approved for something like the Youth Camp Leader position, you'll get an email with all the details - when to show up, where to go, what to bring, and who to ask for."
+"When you get approved for something like the Youth Camp Leader position, you'll get an email with all the details - when to show up, where to go, what to do, etc."
 
 **[Screen: Organization contact information]**
 
 "Plus you'll have their contact info if you need to ask questions or something comes up."
+
+**[Screen: Rejection Email]**
+
+You'll also get an email if you're rejected as well, so you're left with less questions.
 
 ## Best Practices & Tips (7:45 - 8:30)
 

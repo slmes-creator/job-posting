@@ -43,6 +43,41 @@ import Link from "next/link"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { useRouter, useParams } from "next/navigation"
 
+const parseFirestoreDate = (date: any): Date | null => {
+    if (!date) return null
+    
+    try {
+        // Handle Firestore Timestamp objects
+        if (date && typeof date === 'object' && 'seconds' in date && 'nanoseconds' in date) {
+            const timestamp = new Date(date.seconds * 1000 + date.nanoseconds / 1000000)
+            return isNaN(timestamp.getTime()) ? null : timestamp
+        }
+        
+        // If it's already a Date object, check if it's valid
+        if (date instanceof Date) {
+            return isNaN(date.getTime()) ? null : date
+        }
+        
+        // If it's a string or other format, try to parse it
+        const parsed = new Date(date)
+        return isNaN(parsed.getTime()) ? null : parsed
+    } catch {
+        return null
+    }
+}
+
+const formatJobDate = (date: any): string => {
+    const parsedDate = parseFirestoreDate(date)
+    if (!parsedDate) return "Date TBD"
+    
+    return parsedDate.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    })
+}
+
 const ViewJobPage: React.FC = () => {
     const { userProfile, loading: authLoading } = useAuth()
     const router = useRouter()
@@ -193,7 +228,7 @@ const ViewJobPage: React.FC = () => {
                                     />
                                     <Chip 
                                         icon={<CalendarToday />} 
-                                        label={job.date.toLocaleDateString()} 
+                                        label={formatJobDate(job.date)} 
                                         variant="outlined" 
                                     />
                                     <Chip 
@@ -288,7 +323,7 @@ const ViewJobPage: React.FC = () => {
                                             <CalendarToday color="primary" />
                                             <Box>
                                                 <Typography variant="subtitle2">Date</Typography>
-                                                <Typography variant="body2">{job.date.toLocaleDateString()}</Typography>
+                                                <Typography variant="body2">{formatJobDate(job.date)}</Typography>
                                             </Box>
                                         </Box>
                                     </Grid>
@@ -339,7 +374,7 @@ const ViewJobPage: React.FC = () => {
                                     </Box>
                                     <Box display="flex" justifyContent="space-between">
                                         <Typography variant="body2" color="text.secondary">Date:</Typography>
-                                        <Typography variant="body2" fontWeight="medium">{job.date.toLocaleDateString()}</Typography>
+                                        <Typography variant="body2" fontWeight="medium">{formatJobDate(job.date)}</Typography>
                                     </Box>
                                     <Box display="flex" justifyContent="space-between">
                                         <Typography variant="body2" color="text.secondary">Time:</Typography>

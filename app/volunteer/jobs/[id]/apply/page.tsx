@@ -64,6 +64,73 @@ const ApplyJobPage: React.FC = () => {
     },
   })
 
+  const parseFirestoreDate = (date: any): Date | null => {
+    if (!date) return null
+
+    console.log(date)
+
+    try {
+      // Handle Firestore Timestamp objects
+      if (date && typeof date === 'object' && 'seconds' in date && 'nanoseconds' in date) {
+        const timestamp = new Date(date.seconds * 1000 + date.nanoseconds / 1000000)
+        return isNaN(timestamp.getTime()) ? null : timestamp
+      }
+
+      // If it's already a Date object, check if it's valid
+      if (date instanceof Date) {
+        return isNaN(date.getTime()) ? null : date
+      }
+
+      // If it's a string or other format, try to parse it
+      const parsed = new Date(date)
+      return isNaN(parsed.getTime()) ? null : parsed
+    } catch {
+      return null
+    }
+  }
+
+  const formatJobDate = (startDate: any, endDate?: any, fallbackDate?: any): string => {
+    const start = parseFirestoreDate(startDate) || parseFirestoreDate(fallbackDate)
+    const end = parseFirestoreDate(endDate)
+
+    if (!start) return "Date TBD"
+
+    // Single date
+    if (!end || start.valueOf() === end.valueOf()) {
+      return start.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      })
+    }
+
+    // Date range - smart formatting
+    const startYear = start.getFullYear()
+    const endYear = end.getFullYear()
+    const startMonth = start.getMonth()
+    const endMonth = end.getMonth()
+
+    if (startYear === endYear) {
+      if (startMonth === endMonth) {
+        // Same month and year
+        const startStr = start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+        const endStr = end.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', year: 'numeric' })
+        return `${startStr} - ${endStr}`
+      } else {
+        // Same year, different months
+        const startStr = start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+        const endStr = end.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+        return `${startStr} - ${endStr}`
+      }
+    } else {
+      // Different years
+      const startStr = start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+      const endStr = end.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+      return `${startStr} - ${endStr}`
+    }
+  }
+
   useEffect(() => {
     const fetchJobDetails = async () => {
       try {
@@ -263,7 +330,7 @@ const ApplyJobPage: React.FC = () => {
                 <Box display="flex" alignItems="center" gap={1}>
                   <CalendarToday fontSize="small" />
                   <Typography variant="body2">
-                    {job.date.toLocaleDateString()}
+                    {formatJobDate(job.startDate, job.endDate, job.date)} 
                   </Typography>
                 </Box>
                 <Box display="flex" alignItems="center" gap={1}>
