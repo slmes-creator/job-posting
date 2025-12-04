@@ -24,13 +24,20 @@ A comprehensive web application connecting high school volunteers with meaningfu
 
 #### Getting Started
 
+![Screenshot of Creating an Account][./assets/org/create_account.png]
+
 **Account Setup**  
 Create an organization account by providing your organization details including organization name, description, website, and contact information. 
 
-Once registered, complete your organization profile to help volunteers learn more about your mission and work.
+Once registered, complete your organization profile to help volunteers learn more about your mission and work. (TBD)
+
+![Screenshot of Dashboard][./assets/org/dashboard.png]
 
 **Accessing Your Dashboard**  
 Navigate to your organization dashboard to manage all job postings, view applications, and track volunteer engagement. The dashboard provides an overview of active jobs, pending applications, and recent activity.
+
+![Screenshot of Create Job Posting][./assets/org/post1.png]
+![Screenshot of Create Job Posting][./assets/org/post2.png]
 
 #### Creating Job Postings
 
@@ -56,6 +63,8 @@ Choose job status:
 - **Completed**: Volunteer activity has finished
 - **Draft**: Job saved but not yet published
 
+![Screenshot of Job Dashboard][./assets/org/manage_jobs.png]
+
 #### Managing Applications
 
 **Viewing Applications**
@@ -64,6 +73,8 @@ Choose job status:
 3. Applications appear in the left sidebar with volunteer names and application dates
 4. Click individual applications to view complete details including cover letter, availability dates, skills, references, and uploaded resumes
 
+![Screenshot of Applications][./assets/org/applications.png]
+
 **Application Details Include**
 - Volunteer contact information and profile
 - Cover letter explaining their motivation
@@ -71,6 +82,8 @@ Choose job status:
 - List of relevant skills entered by the volunteer
 - Optional references with contact information
 - Uploaded resume or portfolio (PDF, Word, JPG, or PNG format)
+
+![Screenshot of Approving][./assets/org/accept.png]
 
 **Making Decisions**  
 When reviewing applications, you can:
@@ -87,6 +100,8 @@ When reviewing applications, you can:
 2. Provide constructive feedback when possible
 3. Encourage future applications for other opportunities
 4. System sends automatic email notification with your feedback
+
+![Screenshot of Editing/Deleting a Job][./assets/org/edit_post.png]
 
 #### Job Management
 
@@ -112,6 +127,8 @@ Consider changing status to "Closed" instead if you want to stop accepting appli
 
 ### For Volunteers
 
+![Screenshot of Opportunities][./assets/volunteer/opportunities.png]
+
 #### Finding Opportunities
 
 **Browse Available Jobs**  
@@ -122,6 +139,9 @@ View all current volunteer opportunities showing organization name, job title, l
 - Search by location or find remote opportunities
 - Filter by date range to match your availability
 - Use keyword search for specific volunteer work types
+
+![Screenshot of Applications][./assets/volunteer/application1.png]
+![Screenshot of Applications][./assets/volunteer/application2.png]
 
 #### Creating Applications
 
@@ -161,6 +181,8 @@ Upload supporting documents:
 **Submitting Applications**  
 Review all sections before clicking "Submit Application". You'll receive confirmation of successful submission.
 
+![Screenshot of Application Status][./assets/volunteer/pending.png]
+
 #### Application Status and Communication
 
 **Status Tracking**  
@@ -168,6 +190,8 @@ Monitor your applications through three status types:
 - **Pending**: Organization is reviewing your application
 - **Approved**: You've been selected with specific approved date ranges
 - **Declined**: Organization selected other candidates
+
+![Screenshot of Application Status][./assets/volunteer/accepted.png]
 
 **Approved Applications**  
 When approved, you receive:
@@ -179,6 +203,8 @@ When approved, you receive:
 
 **Follow-up Communication**  
 Organizations may contact you directly for additional information. Maintain prompt communication and check email regularly for updates.
+
+![Screenshot of Email Acceptance][./assets/volunteer/email.png]
 
 #### Application Best Practices
 
