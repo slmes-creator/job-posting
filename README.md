@@ -33,7 +33,7 @@ Once registered, complete your organization profile to help volunteers learn mor
 
 ![Screenshot of Dashboard][./assets/org/dashboard.png]
 
-**Accessing Your Dashboard**  
+**Accessing Your Dashboard**
 Navigate to your organization dashboard to manage all job postings, view applications, and track volunteer engagement. The dashboard provides an overview of active jobs, pending applications, and recent activity.
 
 ![Screenshot of Create Job Posting][./assets/org/post1.png]
@@ -56,10 +56,10 @@ Navigate to your organization dashboard to manage all job postings, view applica
 - Add requirements and skills section for any specific needs, age requirements, or what volunteers should bring
 - Provide contact email for volunteer inquiries and optional phone number
 
-**Publishing Options**  
+**Publishing Options**
 Choose job status:
 - **Open**: Actively accepting applications
-- **Closed**: No longer accepting new applications  
+- **Closed**: No longer accepting new applications
 - **Completed**: Volunteer activity has finished
 - **Draft**: Job saved but not yet published
 
@@ -105,7 +105,7 @@ When reviewing applications, you can:
 
 #### Job Management
 
-**Editing Posted Jobs**  
+**Editing Posted Jobs**
 Access any published job to update:
 - Job title, description, or requirements
 - Date, time, or duration changes
@@ -115,7 +115,7 @@ Access any published job to update:
 - Contact information
 - Job status (Open, Closed, Completed, Draft)
 
-**Deleting Jobs**  
+**Deleting Jobs**
 Use the delete function with caution as this permanently removes:
 - The job posting
 - All associated applications and data
@@ -131,7 +131,7 @@ Consider changing status to "Closed" instead if you want to stop accepting appli
 
 #### Finding Opportunities
 
-**Browse Available Jobs**  
+**Browse Available Jobs**
 View all current volunteer opportunities showing organization name, job title, location, date, and brief description. Each listing displays key information to help you identify suitable opportunities.
 
 **Search and Filter**
@@ -147,45 +147,45 @@ View all current volunteer opportunities showing organization name, job title, l
 
 **Application Components**
 
-**Cover Letter**  
+**Cover Letter**
 Write a personalized message explaining your interest and relevant experience. This is your primary opportunity to show organizations why you're well-suited for their volunteer position.
 
-**Availability Selection**  
+**Availability Selection**
 Use the interactive calendar to select your available date range:
 - Click and drag to select single dates or date ranges
 - Calendar prevents selection of past dates
 - Your selected dates appear as connected highlights
 - You can modify selections before submitting
 
-**Skills Entry**  
+**Skills Entry**
 Add relevant skills using the dynamic entry system:
 - Type a skill and press Enter to add it as a tag
 - Skills appear as colored chips that can be removed individually
 - Include both professional skills and personal interests relevant to the work
 - System automatically formats skill names
 
-**References (Optional)**  
+**References (Optional)**
 Provide contact information for someone who can speak to your character and reliability:
 - Reference name
 - Organization or affiliation
 - Email address
 - Phone number
 
-**Resume Upload**  
+**Resume Upload**
 Upload supporting documents:
 - Accepted formats: PDF, Word documents (.doc, .docx), images (JPG, PNG)
 - Maximum file size: 5MB
 - Files upload to secure cloud storage
 - Organizations can view and download your materials
 
-**Submitting Applications**  
+**Submitting Applications**
 Review all sections before clicking "Submit Application". You'll receive confirmation of successful submission.
 
 ![Screenshot of Application Status][./assets/volunteer/pending.png]
 
 #### Application Status and Communication
 
-**Status Tracking**  
+**Status Tracking**
 Monitor your applications through three status types:
 - **Pending**: Organization is reviewing your application
 - **Approved**: You've been selected with specific approved date ranges
@@ -201,7 +201,7 @@ When approved, you receive:
 - Contact information for questions
 - Email notification with all details
 
-**Follow-up Communication**  
+**Follow-up Communication**
 Organizations may contact you directly for additional information. Maintain prompt communication and check email regularly for updates.
 
 ![Screenshot of Email Acceptance][./assets/volunteer/email.png]
@@ -300,26 +300,26 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    
+
     // Jobs are readable by all authenticated users
     // Only the organization that created the job can modify it
     match /jobs/{jobId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null && 
+      allow create: if request.auth != null &&
         request.auth.uid == request.resource.data.organizationId;
-      allow update, delete: if request.auth != null && 
+      allow update, delete: if request.auth != null &&
         resource.data.organizationId == request.auth.uid;
     }
-    
+
     // Applications can be read by volunteer or organization
     // Created by volunteers, updated by organizations
     match /applications/{applicationId} {
-      allow read: if request.auth != null && 
-        (resource.data.volunteerId == request.auth.uid || 
+      allow read: if request.auth != null &&
+        (resource.data.volunteerId == request.auth.uid ||
          get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.organizationId == request.auth.uid);
-      allow create: if request.auth != null && 
+      allow create: if request.auth != null &&
         request.auth.uid == request.resource.data.volunteerId;
-      allow update: if request.auth != null && 
+      allow update: if request.auth != null &&
         get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.organizationId == request.auth.uid;
     }
   }
@@ -334,11 +334,11 @@ service firebase.storage {
   match /b/{bucket}/o {
     // Allow authenticated users to upload resumes to their own folder
     match /resumes/{userId}/{fileName} {
-      allow read, write: if request.auth != null && 
+      allow read, write: if request.auth != null &&
         request.auth.uid == userId &&
         resource.size < 10 * 1024 * 1024; // 10MB limit
     }
-    
+
     // Allow job-related file access
     match /jobs/{allPaths=**} {
       allow read: if request.auth != null;
@@ -538,18 +538,18 @@ import { auth, db } from './lib/firebase'
 const createInitialAdmin = async () => {
   try {
     const userCredential = await createUserWithEmailAndPassword(
-      auth, 
-      'admin@yourdomain.com', 
+      auth,
+      'admin@yourdomain.com',
       'your-secure-password'
     )
-    
+
     await setDoc(doc(db, 'users', userCredential.user.uid), {
       email: 'admin@yourdomain.com',
       role: 'organization',
       organizationName: 'Your Organization',
       createdAt: new Date(),
     })
-    
+
     console.log('Admin user created successfully')
   } catch (error) {
     console.error('Error creating admin:', error)
@@ -697,7 +697,7 @@ This deployment guide ensures your VolunteerHub platform runs reliably in produc
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 - Firebase project
 
@@ -753,22 +753,22 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    
+
     // Jobs are readable by all authenticated users
     match /jobs/{jobId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && 
+      allow write: if request.auth != null &&
         (resource == null || resource.data.organizationId == request.auth.uid);
     }
-    
+
     // Applications
     match /applications/{applicationId} {
-      allow read: if request.auth != null && 
-        (resource.data.volunteerId == request.auth.uid || 
+      allow read: if request.auth != null &&
+        (resource.data.volunteerId == request.auth.uid ||
          resource.data.organizationId == request.auth.uid);
-      allow create: if request.auth != null && 
+      allow create: if request.auth != null &&
         request.auth.uid == resource.data.volunteerId;
-      allow update: if request.auth != null && 
+      allow update: if request.auth != null &&
         resource.data.organizationId == request.auth.uid;
     }
   }
