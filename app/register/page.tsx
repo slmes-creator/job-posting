@@ -21,6 +21,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { Login } from "@mui/icons-material"
 
 const RegisterPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -43,8 +44,11 @@ const RegisterPage: React.FC = () => {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  const { register } = useAuth()
+  const { register, login } = useAuth()
+  const { userProfile } = useAuth()
   const router = useRouter()
+
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -89,7 +93,8 @@ const RegisterPage: React.FC = () => {
             }),
       }
 
-      await register(formData.email, formData.password, userData)
+      const newUserProfile = await register(formData.email, formData.password, userData)
+      console.log(newUserProfile)
       router.push("/")
     } catch (error: any) {
       setError("Failed to create account. Please try again.")
