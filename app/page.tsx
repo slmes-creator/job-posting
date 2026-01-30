@@ -78,7 +78,7 @@ const HomePage: React.FC = () => {
         sx={{
           py: { xs: 6, md: 10 },
           textAlign: "center",
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          background: "linear-gradient(90deg, hsla(191, 75%, 60%, 1) 0%, hsla(248, 87%, 36%, 1) 100%)",
           borderRadius: 3,
           color: "white",
           my: 4,

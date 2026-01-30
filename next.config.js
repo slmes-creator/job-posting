@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -21,8 +22,7 @@ const nextConfig = {
         tls: false,
       }
     }
-    
-    // Handle Firebase modules properly
+
     config.module.rules.push({
       test: /\.m?js$/,
       resolve: {
@@ -34,4 +34,4 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+module.exports = nextConfig

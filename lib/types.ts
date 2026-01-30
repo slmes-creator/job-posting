@@ -34,15 +34,24 @@ export interface Job {
   organizationId: string
   organizationName: string
   location: string
+  isRemote: boolean
+  category: string
   date: Date
+  startDate?: Date | null
+  endDate?: Date | null
   startTime: string
   endTime: string
+  duration: string
+  volunteersNeeded: number
   hoursOffered: number
   maxVolunteers: number
   currentVolunteers: number
   requirements: string[]
+  contactEmail: string
+  contactPhone?: string
   status: "open" | "closed" | "completed" | "draft"
   createdAt: Date
+  updatedAt?: Date
   applicants: string[]
 }
 
@@ -54,15 +63,27 @@ export interface Application {
   volunteerEmail: string
   volunteerPhone?: string
   volunteerSchool?: string
+  organizationId: string
   status: "pending" | "approved" | "declined" | "completed"
   appliedAt: Date
   reviewedAt?: Date
   hoursCompleted?: number
   completedAt?: Date
-  coverLetter?: string
-  availability?: string
-  skills?: string
+  coverLetter: string
+  availability: string
+  availabilityRange?: {
+    from: Date
+    to: Date
+  }
+  availabilityNotes?: string
+  skills: string[]
+  resumeUrl?: string
   organizationResponse?: string
+  approvedDateRanges?: Array<{
+    from: Date
+    to: Date
+    formattedRange: string
+  }>
   references: {
     name?: string
     affiliation?: string

@@ -74,6 +74,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     await setDoc(doc(db, "users", user.uid), profileData)
+
+    setCurrentUser(user)
+    setUserProfile(profileData)
   }
 
   const logout = async () => {
